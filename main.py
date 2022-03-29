@@ -71,11 +71,11 @@ def laser_one_control():
     if laser_one:
         laser_one_button.config(bg="#EC7063")
         laser_one_button['relief'] = 'sunken'
-        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L11").send()
+        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L11").send_msg()
     else:
         laser_one_button.config(bg="SystemButtonFace")
         laser_one_button['relief'] = 'raised'
-        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L10").send()
+        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L10").send_msg()
 
 
 def laser_two_control():
@@ -192,7 +192,7 @@ def scan_complete():
 def connect():
     global arduino, connected
     try:
-        arduino = serial.Serial(arduino_com, 115200, timeout=0.1)
+        arduino = serial.Serial(arduino_com, 9600, timeout=0.1)
     except serial.SerialException:
         print('Arduino not found.')
 
@@ -201,7 +201,7 @@ def connect():
         while True:
             data = arduino.readline()
             if len(data) > 3:
-                print(f'rawData{data.decode()}')
+                print(f'rawData {data.decode()}')
             if bytes("setup", encoding="utf8") in data:
                 connected = True
                 break

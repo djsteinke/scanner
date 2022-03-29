@@ -24,13 +24,30 @@ class ArduinoMessage(object):
                     self.callback()
             threading.Timer(0.1, self.check)
 
-    def send(self):
+    def send_msg(self):
         msg = self.message_id + ":" + self.message
         if self._arduino is not None:
+            print(f"Sending message[{msg}]")
             self._arduino.write(bytes(msg, encoding="utf8"))
-            threading.Timer(0.1, self.check)
+            while True:
+                data = self._arduino.readline()
+                data_string = data.decode()
+                if len(data_string) > 0:
+                    print(f'rawData[{data_string}]')
+                    break
+                print("didn't break")
+                datas = data_string.split(":")
+                if len(datas) > 0 and self.message_id == datas[0]:
+                    if len(datas) > 1 and "complete" == datas[1]:
+                        if len(datas) > 2:
+                            self.response = datas[2]
+                        if self.callback is not None:
+                            self.callback()
         else:
             print("No arduino found.  Message will not be sent.")
+
+    def send(self):
+        threading.Timer(0.1, self.send)
 
     @property
     def message(self):
