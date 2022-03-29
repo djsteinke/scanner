@@ -91,15 +91,14 @@ bool step(int numberOfSteps, int cw)
 
 String getValue(String data, int index)
 {
-    int found = 0;
-    int strIndex[] = {0, -1};
-    int maxIndex = data.length() - 1;
-    for (int i = 0; i <= maxIndex && found <= index; i++) {
-        if (data.charAt(i) == ':' || i == maxIndex) {
-            found ++;
-            strIndex[0] = strIndex[1] + 1;
-            strIndex[1] = (i == maxIndex) ? i+1 : 1;
+    int element = 0
+    int found[] = {0, -1, -1, -1, -1};
+
+    for (int i = 0; i <= maxIndex && element <= index+1; i++) {
+        if (data.charAt(i) == ':') {
+            element ++;
+            found[element] = i
         }
     }
-    return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
+    return found[1] < 0 ? data : data.substring(found[index], found[index+1]);
 }
