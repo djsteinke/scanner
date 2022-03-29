@@ -7,9 +7,13 @@ const int L1 = 6;
 const int L2 = 7;
 
 const int stepsPerRev = 200;
+const int microSteps = 16;
 const int pulsePerRev = 6400;
+const int microPerStep;
 
 int steps = 50;
+long stepCount;
+bool cw = false;
 String data;
 String response;
 String msg_id;
@@ -29,6 +33,8 @@ void setup()
     pinMode(L2, OUTPUT);
     digitalWrite(L1, LOW);
     digitalWrite(L2, LOW);
+
+    microPerStep = 60000000/16/pulsePerRev;
 
 }
 
@@ -57,11 +63,30 @@ void loop()
             // Laser 2 ON
             response += ":laser2on";
             digitalWrite(L2, HIGH);
+        } else if (msg == "STEP") {
+            stepCount = getValue(data, 2);
+            cw = getValue(data, 3) == "CW";
+            step(stepCount, cw);
         }
 
         Serial.print(response);
         delay(250);
     }
+}
+
+bool step(int numberOfSteps, int cw)
+{
+  if (cw) {
+    digitalWrite(DIR, HIGH);
+  } else {
+    digitalWrite(DIR, LOW);
+  }
+  for(int n = 0; n < numberOfSteps; n++) {
+    digitalWrite(PUL, HIGH);
+    delayMicroseconds(20); // this line is probably unnecessary
+    digitalWrite(PUL, LOW);
+    delayMicroseconds(microPerStep);
+  }
 }
 
 String getValue(String data, int index)

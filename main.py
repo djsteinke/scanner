@@ -162,6 +162,8 @@ def next_step():
         if connected:
             step += 1
             print(f'step{step}')
+            motor_steps = 200*16/steps
+            arduino.send_msg(f"STEP:{motor_steps}:CW")
             #ArduinoMessage(arduino, "step", msg_counter.get_next(), next_step).send()
     else:
         print("Scan complete.")
@@ -169,7 +171,7 @@ def next_step():
 
 def scan():
     global scanning, step, connected
-    if arduino is not None and connected:
+    if arduino.connected:
         step = 0
         next_step()
     else:
