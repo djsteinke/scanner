@@ -22,13 +22,13 @@ class Arduino(object):
 
         # Wait for connect from arduino
         if self._connection is not None:
-            while True:
-                data = self._connection.readline()
+            while not self.connected:
+                data = self._connection.readline().decode()
                 if len(data) > 3:
-                    print(f'rawData {data.decode()}')
-                if data.decode() == "setup":
+                    print(f'rawData [{data}]')
+                if data == "setup":
                     self.connected = True
-                    break
+            print("connected")
 
     def get_msg_id(self):
         self._msg_id += 1
