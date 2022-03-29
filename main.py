@@ -7,6 +7,9 @@ from PIL import ImageTk, Image
 import serial
 import cv2
 
+from arduino_message import ArduinoMessage
+from message_counter import MessageCounter
+
 cam_id = 0
 arduino_com = "COM4"
 arduino = None
@@ -39,6 +42,8 @@ print(cap.get(cv2.CAP_PROP_FPS))
 print(cap.get(cv2.CAP_PROP_FOURCC))
 print(f'Saturation: {cap.get(cv2.CAP_PROP_SATURATION)}')
 
+msg_counter = MessageCounter()
+
 scanning = False
 step = 0
 connected = False
@@ -64,18 +69,26 @@ def laser_one_control():
     global laser_one
     laser_one = not laser_one
     if laser_one:
-        laser_one_button.config(bg="blue")
+        laser_one_button.config(bg="#EC7063")
+        laser_one_button['relief'] = 'sunken'
+        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L11").send()
     else:
         laser_one_button.config(bg="SystemButtonFace")
+        laser_one_button['relief'] = 'raised'
+        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L10").send()
 
 
 def laser_two_control():
     global laser_two
     laser_two = not laser_two
     if laser_two:
-        laser_two_button.config(bg="blue")
+        laser_two_button.config(bg="#EC7063")
+        laser_two_button['relief'] = 'sunken'
+        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L21").send()
     else:
         laser_two_button.config(bg="SystemButtonFace")
+        laser_two_button['relief'] = 'raised'
+        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L20").send()
 
 
 def flip_image():
@@ -85,8 +98,6 @@ def flip_image():
 
 def set_saturation_ret(event):
     set_saturation()
-    #set_contrast()
-    #set_brightness()
 
 
 def set_saturation():
@@ -127,7 +138,7 @@ def button_test():
 
 def video_stream():
     res, fr = cap.read()
-    line_color = (0, 0, 255)  # Green color in BGR
+    line_color = (0, 0, 255)  # RED color in BGR
     line_thickness = 1
     fr = cv2.line(fr, vl_s, vl_e, line_color, line_thickness)
     fr = cv2.line(fr, hl_s, hl_e, line_color, line_thickness)
@@ -144,41 +155,31 @@ def start_scan():
     if but_start is not None and but_cancel is not None:
         but_start['state'] = 'disabled'
         but_cancel['state'] = 'normal'
-    thread = threading.Timer(1, scan)
+    thread = threading.Timer(0.1, scan)
     thread.start()
+
+
+def next_step():
+    global step
+    if step <= steps:
+        if connected:
+            step += 1
+            print(f'step{step}')
+            ArduinoMessage(arduino, "step", msg_counter.get_next(), next_step).send()
+    else:
+        print("Scan complete.")
 
 
 def scan():
     global scanning, step, connected
-    scanning = True
-    if arduino is not None:
-        while scanning:
-            print(f'step{step}')
-            if step == steps:
-                scanning = False
-            # set platform 0 deg
-            if connected:
-                arduino.write(bytes("step", encoding="utf8"))
+    if arduino is not None and connected:
+        step = 0
+        next_step()
+    else:
+        scan_complete()
 
-            while True:
-                data = arduino.readline()
-                strData = data.decode()
-                if len(strData) > 0:
-                    print(f'rawData{strData}')
-                if bytes("setup", encoding="utf8") in data:
-                    connected = True
-                    break
 
-                if bytes("complete", encoding="utf8") in data:
-                    result, image = cap.read()
-                    if result:
-                        title = f"scan_{step}"
-                        cv2.imshow(title, image)
-                        cv2.imwrite(f"scan_{step}.jpg", image)
-                        cv2.destroyWindow(title)
-                    break
-            step += 1
-
+def scan_complete():
     if but_start is not None and but_cancel is not None:
         sleep(3)
         if root is not None:
@@ -188,12 +189,32 @@ def scan():
         but_cancel['state'] = 'disabled'
 
 
-if __name__ == '__main__':
-
+def connect():
+    global arduino, connected
     try:
-        arduino = serial.Serial(arduino_com, 115200, timeout=.1)
+        arduino = serial.Serial(arduino_com, 115200, timeout=0.1)
     except serial.SerialException:
         print('Arduino not found.')
+
+    # Wait for connect from arduino
+    if arduino is not None:
+        while True:
+            data = arduino.readline()
+            if len(data) > 3:
+                print(f'rawData{data.decode()}')
+            if bytes("setup", encoding="utf8") in data:
+                connected = True
+                break
+
+
+font = "arial 9"
+font_bold = font + " bold"
+
+
+if __name__ == '__main__':
+
+    connect()
+
 
     #cv2.imwrite('test.jpg', image)
 
@@ -218,44 +239,72 @@ if __name__ == '__main__':
     mn.columnconfigure(0, weight=1)
     mn.columnconfigure(1, weight=1)
 
-    mn_row = 0
-    laser_one_button = Button(mn, text="Laser 1", command=laser_one_control)
-    laser_one_button.grid(column=0, row=mn_row)
-    laser_two_button = Button(mn, text="Laser 2", command=laser_two_control)
-    laser_two_button.grid(column=1, row=mn_row)
+    mn_row = -1
+
+    mn_row += 1
+    config_label = Label(mn, text="Camera Control", font=font_bold)
+    config_label.grid(columnspan=2, column=0, row=mn_row, sticky=W)
+
+    mn_row += 1
+    but_start = Button(mn, text="Run configure", command=())
+    but_start.grid(column=0, row=mn_row, padx=10, sticky=W)
+
     mn_row += 1
     saturation_label = Label(mn, text="Saturation:")
-    saturation_label.grid(column=0, row=mn_row, sticky=W, pady=3)
-    saturation_spinbox = Spinbox(mn, from_=0, to=100, width=10, textvariable=StringVar(value=int(saturation)), command=set_saturation)
+    saturation_label.grid(column=0, row=mn_row, sticky=W, pady=3, padx=(10, 0))
+    saturation_spinbox = Spinbox(mn, from_=0, to=100, width=10, textvariable=StringVar(value=int(saturation)),
+                                 command=set_saturation)
     saturation_spinbox.grid(column=1, row=mn_row, sticky=E)
     saturation_spinbox.bind('<Return>', set_saturation_ret)
+
     mn_row += 1
     brightness_label = Label(mn, text="Brightness:")
-    brightness_label.grid(column=0, row=mn_row, sticky=W, pady=3)
-    brightness_spinbox = Spinbox(mn, from_=0, to=100, width=10, textvariable=StringVar(value=int(brightness)), command=set_brightness)
+    brightness_label.grid(column=0, row=mn_row, sticky=W, pady=3, padx=(10, 0))
+    brightness_spinbox = Spinbox(mn, from_=0, to=100, width=10, textvariable=StringVar(value=int(brightness)),
+                                 command=set_brightness)
     brightness_spinbox.grid(column=1, row=mn_row, sticky=E)
+    brightness_spinbox.bind('<Return>', set_brightness_ret)
+
     mn_row += 1
     contrast_label = Label(mn, text="Contrast:")
-    contrast_label.grid(column=0, row=mn_row, sticky=W, pady=3)
-    contrast_spinbox = Spinbox(mn, from_=0, to=100, width=10, textvariable=StringVar(value=int(contrast)), command=set_contrast)
+    contrast_label.grid(column=0, row=mn_row, sticky=W, pady=3, padx=(10, 0))
+    contrast_spinbox = Spinbox(mn, from_=0, to=100, width=10, textvariable=StringVar(value=int(contrast)),
+                               command=set_contrast)
     contrast_spinbox.grid(column=1, row=mn_row, sticky=E)
-    mn_row += 1
+    contrast_spinbox.bind('<Return>', set_contrast_ret)
 
-    rotate_checkbox = Checkbutton(mn, text="Vertical Image", command=flip_image)
-    rotate_checkbox.grid(columnspan=2, column=0, row=mn_row, sticky=W)
     mn_row += 1
+    config_label = Label(mn, text="Laser Control", font=font_bold)
+    config_label.grid(columnspan=2, column=0, row=mn_row, sticky=W, pady=(20, 0))
 
+    mn_row += 1
+    on_off_label = Label(mn, text="On/Off:")
+    on_off_label.grid(column=0, row=mn_row, padx=(10, 0), sticky=W)
+    laser_one_button = Button(mn, text="  L  ", command=laser_one_control, font=font_bold)
+    laser_one_button.grid(column=1, row=mn_row, sticky=W)
+    laser_two_button = Button(mn, text="  R  ", command=laser_two_control, font=font_bold)
+    laser_two_button.grid(column=1, row=mn_row, sticky=E)
+
+    """
+        mn_row += 1
+        rotate_checkbox = Checkbutton(mn, text="Vertical Image", command=flip_image)
+        rotate_checkbox.grid(columnspan=2, column=0, row=mn_row, sticky=W)
+    """
+    mn_row += 1
+    mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
     #f1 = Frame(mn, pady=10)
     #f1.columnconfigure(0, weight=1)
     #f1.columnconfigure(1, weight=1)
-    but_start = Button(mn, text="Start Scan", command=start_scan)
-    but_start.grid(column=0, row=mn_row, padx=10)
-    but_cancel = Button(mn, text="Cancel Scan", command=button_test)
-    but_cancel.grid(column=1, row=mn_row, padx=10)
+
+    bottom = Frame(root)
+    but_start = Button(bottom, text="Start Scan", command=start_scan)
+    but_start.grid(column=0, row=0, padx=10)
+    but_cancel = Button(bottom, text="Cancel Scan", command=button_test)
+    but_cancel.grid(column=1, row=0, padx=10)
     but_cancel['state'] = "disabled"
     #f1.grid(column=0, row=mn_row)
+    bottom.grid(column=0, row=0, padx=10, pady=10, sticky=S)
 
-    mn.grid(column=0, row=0, padx=10, pady=10, sticky=S)
     # Create a label in the frame
     lmain = Label(root)
     lmain.grid(column=1, row=0)
