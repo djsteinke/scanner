@@ -4,15 +4,12 @@ from tkinter import *
 from tkinter.messagebox import showinfo
 
 from PIL import ImageTk, Image
-import serial
 import cv2
 
-from arduino_message import ArduinoMessage
-from message_counter import MessageCounter
+from arduino import Arduino
 
 cam_id = 0
-arduino_com = "COM4"
-arduino = None
+arduino = Arduino(speed=38400)
 
 # 200 steps/rev
 # turn table 4 steps / pic
@@ -42,7 +39,7 @@ print(cap.get(cv2.CAP_PROP_FPS))
 print(cap.get(cv2.CAP_PROP_FOURCC))
 print(f'Saturation: {cap.get(cv2.CAP_PROP_SATURATION)}')
 
-msg_counter = MessageCounter()
+arduino_com = "COM4"
 
 scanning = False
 step = 0
@@ -71,11 +68,11 @@ def laser_one_control():
     if laser_one:
         laser_one_button.config(bg="#EC7063")
         laser_one_button['relief'] = 'sunken'
-        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L11").send_msg()
+        arduino.send_msg("L11")
     else:
         laser_one_button.config(bg="SystemButtonFace")
         laser_one_button['relief'] = 'raised'
-        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L10").send_msg()
+        arduino.send_msg("L10")
 
 
 def laser_two_control():
@@ -84,11 +81,11 @@ def laser_two_control():
     if laser_two:
         laser_two_button.config(bg="#EC7063")
         laser_two_button['relief'] = 'sunken'
-        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L21").send()
+        arduino.send_msg("L21")
     else:
         laser_two_button.config(bg="SystemButtonFace")
         laser_two_button['relief'] = 'raised'
-        ArduinoMessage(arduino, message_id=msg_counter.get_next(), message="L20").send()
+        arduino.send_msg("L20")
 
 
 def flip_image():
@@ -165,7 +162,7 @@ def next_step():
         if connected:
             step += 1
             print(f'step{step}')
-            ArduinoMessage(arduino, "step", msg_counter.get_next(), next_step).send()
+            #ArduinoMessage(arduino, "step", msg_counter.get_next(), next_step).send()
     else:
         print("Scan complete.")
 
@@ -189,31 +186,13 @@ def scan_complete():
         but_cancel['state'] = 'disabled'
 
 
-def connect():
-    global arduino, connected
-    try:
-        arduino = serial.Serial(arduino_com, 9600, timeout=0.1)
-    except serial.SerialException:
-        print('Arduino not found.')
-
-    # Wait for connect from arduino
-    if arduino is not None:
-        while True:
-            data = arduino.readline()
-            if len(data) > 3:
-                print(f'rawData {data.decode()}')
-            if bytes("setup", encoding="utf8") in data:
-                connected = True
-                break
-
-
 font = "arial 9"
 font_bold = font + " bold"
 
 
 if __name__ == '__main__':
 
-    connect()
+    arduino.connect()
 
 
     #cv2.imwrite('test.jpg', image)
