@@ -44,6 +44,6 @@ class Scan(object):
             self._callback()
 
     def save_frame(self, filename):
-        image = self.cap.read()
+        image, ret = self.cap.read()
         file = os.path.join(self.path, filename)
         cv2.imwrite(file, image)
