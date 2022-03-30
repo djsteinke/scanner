@@ -1,5 +1,6 @@
 import threading
 import cv2
+import imutils
 from os import getcwd
 from time import sleep, strftime
 from tkinter import *
@@ -144,7 +145,10 @@ def video_stream():
     line_thickness = 1
     fr = cv2.line(fr, vl_s, vl_e, line_color, line_thickness)
     fr = cv2.line(fr, hl_s, hl_e, line_color, line_thickness)
-    fr = cv2.resize(fr, (cam_mid_w, cam_mid_h), interpolation=cv2.INTER_LINEAR_EXACT)
+    if rotate_image:
+        fr = imutils.rotate_bound(fr, -90)
+    (h, w) = fr.shape[:2]
+    fr = cv2.resize(fr, (w//2, h//2), interpolation=cv2.INTER_LINEAR_EXACT)
     cv2image = cv2.cvtColor(fr, cv2.COLOR_BGR2RGBA)
     img = Image.fromarray(cv2image)
     imgtk = ImageTk.PhotoImage(image=img)
@@ -157,7 +161,7 @@ def start_scan():
     if but_start is not None and but_cancel is not None:
         but_start['state'] = 'disabled'
         but_cancel['state'] = 'normal'
-    scan = Scan(cap, arduino, getcwd(), s=5, c=scan_complete)
+    scan = Scan(cap, arduino, getcwd(), s=5, c=scan_complete, r=rotate_image)
     thread = threading.Timer(0.1, scan.start)
     thread.start()
 
@@ -192,6 +196,14 @@ font_bold = font + " bold"
 if __name__ == '__main__':
     arduino.open()
 
+
+    #cv2.imwrite('test.jpg', image)
+
+    # image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_LANCZOS4)
+    # cv2.imwrite('test2.jpg', image)
+    # cv2.imshow("test", image)
+    # cv2.waitKey()
+
     if not cap.isOpened():
         raise IOError("Cannot open webcam")
 
@@ -201,6 +213,8 @@ if __name__ == '__main__':
     # Create a frame
     root.columnconfigure(0, weight=1)
     root.columnconfigure(1, weight=1)
+
+    #root.bind('<Return>', set_saturation_ret)
 
     mn = Frame(root)
     mn.columnconfigure(0, weight=1)
@@ -252,11 +266,10 @@ if __name__ == '__main__':
     laser_two_button = Button(mn, text="  R  ", command=laser_two_control, font=font_bold)
     laser_two_button.grid(column=1, row=mn_row, sticky=E)
 
-    """
-        mn_row += 1
-        rotate_checkbox = Checkbutton(mn, text="Vertical Image", command=flip_image)
-        rotate_checkbox.grid(columnspan=2, column=0, row=mn_row, sticky=W)
-    """
+    mn_row += 1
+    rotate_checkbox = Checkbutton(mn, text="Vertical Image", command=flip_image)
+    rotate_checkbox.grid(columnspan=2, column=0, row=mn_row, sticky=W)
+
     mn_row += 1
     mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
     #f1 = Frame(mn, pady=10)

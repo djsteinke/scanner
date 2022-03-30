@@ -1,10 +1,11 @@
 import os
 import cv2
+from imutils import rotate_bound
 from time import strftime
 
 
 class Scan(object):
-    def __init__(self, cap, arduino, d="/", w=640, h=480, s=100, c=None):
+    def __init__(self, cap, arduino, d="/", w=640, h=480, s=100, c=None, r=False):
         self.cap = cap
         self.arduino = arduino
         self.wd = d
@@ -13,6 +14,7 @@ class Scan(object):
         self.steps = s
         self._callback = c
         self.path = None
+        self.rotate = r
         self.timestamp = strftime('%Y%m%d%H%M%S')
 
     def start(self):
@@ -45,5 +47,7 @@ class Scan(object):
 
     def save_frame(self, filename):
         image, ret = self.cap.read()
+        if self.rotate:
+            fr = rotate_bound(image, -90)
         file = os.path.join(self.path, filename)
         cv2.imwrite(file, image)
