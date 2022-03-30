@@ -1,12 +1,14 @@
 import threading
-from time import sleep
+import cv2
+from os import getcwd
+from time import sleep, strftime
 from tkinter import *
 from tkinter.messagebox import showinfo
 
 from PIL import ImageTk, Image
-import cv2
 
 from arduino import Arduino
+from scan import Scan
 
 cam_id = 0
 arduino = Arduino(speed=38400)
@@ -34,9 +36,8 @@ cap = cv2.VideoCapture(cam_id, cv2.CAP_ANY)
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, cam_w)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cam_h)
-print(cap.get(cv2.CAP_PROP_EXPOSURE))
-print(cap.get(cv2.CAP_PROP_FPS))
-print(cap.get(cv2.CAP_PROP_FOURCC))
+print(f'EXPOSURE: {cap.get(cv2.CAP_PROP_EXPOSURE)}')
+print(f'FPS: {cap.get(cv2.CAP_PROP_FPS)}')
 print(f'Saturation: {cap.get(cv2.CAP_PROP_SATURATION)}')
 
 arduino_com = "COM4"
@@ -60,6 +61,10 @@ rotate_image = False
 
 laser_one = False
 laser_two = False
+
+
+def get_timestamp():
+    return strftime("%Y%m%d%H%M%S")
 
 
 def laser_one_control():
@@ -152,7 +157,8 @@ def start_scan():
     if but_start is not None and but_cancel is not None:
         but_start['state'] = 'disabled'
         but_cancel['state'] = 'normal'
-    thread = threading.Timer(0.1, scan)
+    scan = Scan(cap, arduino, getcwd(), s=5, c=scan_complete)
+    thread = threading.Timer(0.1, scan.start)
     thread.start()
 
 
@@ -167,15 +173,6 @@ def next_step():
             #ArduinoMessage(arduino, "step", msg_counter.get_next(), next_step).send()
     else:
         print("Scan complete.")
-
-
-def scan():
-    global scanning, step, connected
-    if arduino.connected:
-        step = 0
-        next_step()
-    else:
-        scan_complete()
 
 
 def scan_complete():
@@ -193,16 +190,7 @@ font_bold = font + " bold"
 
 
 if __name__ == '__main__':
-
-    arduino.connect()
-
-
-    #cv2.imwrite('test.jpg', image)
-
-    # image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_LANCZOS4)
-    # cv2.imwrite('test2.jpg', image)
-    # cv2.imshow("test", image)
-    # cv2.waitKey()
+    arduino.open()
 
     if not cap.isOpened():
         raise IOError("Cannot open webcam")
@@ -213,8 +201,6 @@ if __name__ == '__main__':
     # Create a frame
     root.columnconfigure(0, weight=1)
     root.columnconfigure(1, weight=1)
-
-    #root.bind('<Return>', set_saturation_ret)
 
     mn = Frame(root)
     mn.columnconfigure(0, weight=1)
