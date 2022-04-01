@@ -7,9 +7,11 @@ from tkinter import *
 from tkinter.messagebox import showinfo
 
 from PIL import ImageTk, Image
+from android import Android
 
 from arduino import Arduino
 from scan import Scan
+from subprocess import Popen, PIPE
 
 cam_id = 0
 arduino = Arduino(speed=38400)
@@ -63,9 +65,41 @@ rotate_image = False
 laser_one = False
 laser_two = False
 
+android = Android()
+
+
+def run_win_cmd(cmd):
+    result = []
+    process = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    for line in process.stdout:
+        result.append(line)
+    errcode = process.returncode
+    for line in result:
+        print(line)
+    if errcode is not None:
+        raise Exception('cmd %s failed, see above for details', cmd)
+
 
 def get_timestamp():
     return strftime("%Y%m%d%H%M%S")
+
+
+android_connected = False
+
+
+def phone_control():
+    global android_connected
+    try:
+        if not android_connected:
+            host = "%s.%s.%s.%s" % (host_value1.get('1.0', 'end-1c'), host_value2.get('1.0', 'end-1c'),
+                                    host_value3.get('1.0', 'end-1c'), host_value4.get('1.0', 'end-1c'))
+            android.connect(host, int(port_value.get("1.0", 'end-1c')))
+        else:
+            android.disconnect()
+        android_connected = not android_connected
+        connect_android['text'] = 'Disconnect' if android_connected else 'Connect'
+    except Exception as e:
+        print(str(e))
 
 
 def laser_one_control():
@@ -161,7 +195,8 @@ def start_scan():
     if but_start is not None and but_cancel is not None:
         but_start['state'] = 'disabled'
         but_cancel['state'] = 'normal'
-    scan = Scan(cap, arduino, getcwd(), s=5, c=scan_complete, r=rotate_image)
+
+    scan = Scan(cap, arduino, android=android, d=getcwd(), s=5, c=scan_complete, r=rotate_image)
     thread = threading.Timer(0.1, scan.start)
     thread.start()
 
@@ -271,6 +306,43 @@ if __name__ == '__main__':
     rotate_checkbox.grid(columnspan=2, column=0, row=mn_row, sticky=W)
 
     mn_row += 1
+    config_label = Label(mn, text="Android Control", font=font_bold)
+    config_label.grid(columnspan=2, column=0, row=mn_row, sticky=W, pady=(20, 0))
+
+    mn_row += 1
+    host_label = Label(mn, text="Host:")  # 255.255.255.255
+    host_label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
+    host_frame = Frame(mn)
+    host_value1 = Text(host_frame, width=3, height=1)
+    host_value1.insert('1.0', '192')
+    host_value1.grid(column=0, row=0)
+    Label(host_frame, text=".").grid(column=1, row=0)
+    host_value2 = Text(host_frame, width=3, height=1)
+    host_value2.insert('1.0', '168')
+    host_value2.grid(column=2, row=0)
+    Label(host_frame, text=".").grid(column=3, row=0)
+    host_value3 = Text(host_frame, width=3, height=1)
+    host_value3.insert('1.0', '0')
+    host_value3.grid(column=4, row=0)
+    Label(host_frame, text=".").grid(column=5, row=0)
+    host_value4 = Text(host_frame, width=3, height=1)
+    host_value4.insert('1.0', '14')
+    host_value4.grid(column=6, row=0, padx=(0, 10))
+    host_frame.grid(column=1, row=mn_row, padx=(10, 10), pady=3, sticky=W)
+
+    mn_row += 1
+    port_label = Label(mn, text="Port:")
+    port_label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
+    port_value = Text(mn, width=5, height=1)
+    port_value.insert('1.0', '38817')
+    port_value.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
+    mn_row += 1
+    connect_android = Button(mn, text="Connect", command=phone_control, width=10)
+    connect_android.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=3)
+    #connect_android = Button(mn, text="Disconnect", command=laser_one_control, width=10)
+    #connect_android.grid(column=1, row=mn_row, padx=(10, 10), sticky=EW)
+
+    mn_row += 1
     mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
     #f1 = Frame(mn, pady=10)
     #f1.columnconfigure(0, weight=1)
@@ -283,13 +355,13 @@ if __name__ == '__main__':
     but_cancel.grid(column=1, row=0, padx=10)
     but_cancel['state'] = "disabled"
     #f1.grid(column=0, row=mn_row)
-    bottom.grid(column=0, row=0, padx=10, pady=10, sticky=S)
+    bottom.grid(column=0, row=1, padx=10, pady=10, sticky=S)
 
     # Create a label in the frame
     lmain = Label(root)
     lmain.grid(column=1, row=0)
 
-    video_stream()
+    # video_stream()
     root.mainloop()
 
     cap.release()
