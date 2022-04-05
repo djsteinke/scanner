@@ -7,14 +7,18 @@ class Android(object):
         self.client = None
         self.device = None
 
-    def connect(self, host="127.0.0.1", port=5037):
+    def connect(self, host="127.0.0.1", port=5037, callback=None):
         try:
             self.client = AdbClient(host, port)
         except OSError or RuntimeError:
+            if callback is not None:
+                callback(None, True)
             raise Exception('Error connecting to ADB server or device.')
         devices = self.client.devices()
         if len(devices) > 0:
             self.device = devices[0]
+        if callback is not None:
+            callback(None, True)
 
     def disconnect(self):
         self.client.close()

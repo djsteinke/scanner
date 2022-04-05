@@ -195,8 +195,8 @@ def start_scan():
     if but_start is not None and but_cancel is not None:
         but_start['state'] = 'disabled'
         but_cancel['state'] = 'normal'
-
-    scan = Scan(cap, arduino, android=android, d=getcwd(), s=5, c=scan_complete, r=rotate_image)
+    scan_steps = int(steps_value.get('1.0', 'end-1c'))
+    scan = Scan(cap, arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, r=rotate_image)
     thread = threading.Timer(0.1, scan.start)
     thread.start()
 
@@ -356,6 +356,21 @@ if __name__ == '__main__':
     but_cancel['state'] = "disabled"
     #f1.grid(column=0, row=mn_row)
     bottom.grid(column=0, row=1, padx=10, pady=10, sticky=S)
+
+    mn_row += 1
+    scan_label = Label(mn, text="Scan Control", font=font_bold)
+    scan_label.grid(columnspan=2, column=0, row=mn_row, sticky=W, pady=(20, 0))
+    mn_row += 1
+    steps_label = Label(mn, text="Steps:")
+    steps_label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
+    steps_value = Text(mn, width=5, height=1)
+    steps_value.insert('1.0', '100')
+    steps_value.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
+    mn_row += 1
+    label = Label(mn, text="Android Camera:")
+    label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
+    android_checkbox = Checkbutton(mn, command=flip_image)
+    android_checkbox.grid(column=1, row=mn_row, padx=(10, 0), sticky=W)
 
     # Create a label in the frame
     lmain = Label(root)
