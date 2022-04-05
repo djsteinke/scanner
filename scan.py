@@ -63,9 +63,9 @@ class Scan(object):
             self._callback()
 
     def save_frame(self, filename):
-        image, ret = self.cap.read()
+        ret, image = self.cap.read()
         if self.rotate:
-            fr = rotate_bound(image, -90)
+            image = rotate_bound(image, -90)
         file = os.path.join(self.path, filename)
         cv2.imwrite(file, image)
 
