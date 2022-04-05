@@ -168,6 +168,12 @@ if __name__ == '__main__':
     steps_scan = Text(mn, width=3, height=1)
     steps_scan.insert('1.0', '200')
     steps_scan.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
+    mn_row += 1
+    label = Label(mn, text="Speed (rpm):")
+    label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
+    rpm = Text(mn, width=3, height=1)
+    rpm.insert('1.0', '10')
+    rpm.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     use_left_laser = IntVar()
     use_right_laser = IntVar(value=1)
     mn_row += 1
