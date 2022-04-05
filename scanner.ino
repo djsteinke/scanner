@@ -100,5 +100,5 @@ String getValue(String data, int index)
             found[element] = i
         }
     }
-    return found[1] < 0 ? data : data.substring(found[index], found[index+1]);
+    return found[1] < 0 ? data : data.substring(found[index], found[index+1]-1);
 }

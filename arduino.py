@@ -6,7 +6,7 @@ import serial
 class Arduino(object):
     def __init__(self, com="COM4", speed="9600"):
         self.serial = None
-        self.connected = False
+        self._connected = False
         self._sending = False
         self.response = None
         self.callback = None
@@ -19,6 +19,7 @@ class Arduino(object):
             self.serial = serial.Serial(self._com, self._speed, timeout=0.2)
         except serial.SerialException:
             print('Arduino not found.')
+            raise Exception('Failed to connect')
 
         # Wait for connect from arduino
         if self.serial is not None:
@@ -60,3 +61,11 @@ class Arduino(object):
                     break
         else:
             print("No arduino found.  Message will not be sent.")
+
+    @property
+    def connected(self):
+        return self._connected
+
+    @connected.setter
+    def connected(self, val):
+        self._connected = val

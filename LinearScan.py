@@ -131,8 +131,25 @@ def laser_two():
         laser_two_button['relief'] = 'raised'
 
 
+def arduino_connect():
+    if arduino.connected:
+        arduino.close()
+    else:
+        try:
+            arduino.open()
+        except Exception as e:
+            print(str(e))
+    arduino_con_bt['text'] = '0' if arduino.connected else '1'
+    if arduino.connected:
+        arduino_con_bt.config(bg="#EC7063")
+        arduino_con_bt['relief'] = 'sunken'
+    else:
+        arduino_con_bt.config(bg="SystemButtonFace")
+        arduino_con_bt['relief'] = 'raised'
+
+
 if __name__ == '__main__':
-    arduino.open()
+    #arduino.open()
 
     root = Tk()
     root.title("Scanner")
@@ -150,6 +167,8 @@ if __name__ == '__main__':
     mn_row += 1
     label = Label(mn, text="Scanner Setup", font=font_bold)
     label.grid(columnspan=2, column=0, row=mn_row, sticky=W, pady=(20, 0))
+    arduino_con_bt = Button(mn, text="1", width=3, command=arduino_connect)
+    arduino_con_bt.grid(column=1, row=mn_row, sticky=E)
     mn_row += 1
     label = Label(mn, text="Screw Pitch (TPI):")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
