@@ -42,25 +42,25 @@ def dump_asc(filename, points):
 
 
 def run1():
-    npoints = [];
-    ncoords = [];
+    npoints = []
+    ncoords = []
 
-    points = load_asc('cloud.asc');
+    points = load_asc('cloud.asc')
 
     zmax, zmin = max(points[:, 2]), min(points[:, 2])
 
     # zmin = 50;
 
-    a = points[np.where(points[:, 2] == 50)];
-    aa = np.arctan2(a[:, 0], a[:, 1]);
+    a = points[np.where(points[:, 2] == 50)]
+    aa = np.arctan2(a[:, 0], a[:, 1])
 
-    a = a[np.argsort(aa)];
+    a = a[np.argsort(aa)]
 
-    b = points[np.where(points[:, 2] == 52)];
-    ab = np.arctan2(b[:, 0], b[:, 1]);
-    b = b[np.argsort(ab)];
+    b = points[np.where(points[:, 2] == 52)]
+    ab = np.arctan2(b[:, 0], b[:, 1])
+    b = b[np.argsort(ab)]
 
-    idx = len(npoints);
+    idx = len(npoints)
 
     r = [p + idx for p in range(0, len(a))]
 
@@ -80,8 +80,8 @@ def run1():
 
         ncoords.append((tl, bl, br, tr))
 
-    npoints.extend(list(a));
-    npoints.extend(list(b));
+    npoints.extend(list(a))
+    npoints.extend(list(b))
 
     # index = 0;
     #
@@ -102,35 +102,35 @@ def run1():
 
 
 def run3():
-    npoints = [];
-    ncoords = [];
+    npoints = []
+    ncoords = []
 
-    idx = 0;
+    idx = 0
 
-    source = load_asc('cloud.asc');
+    source = load_asc('cloud.asc')
 
     zmax, zmin = max(source[:, 2]), min(source[:, 2])
     points = []
 
     for i in range(int(zmin), int(zmax) + 1):
-        points = sort_angles(source[np.where(source[:, 2] == i)]);
+        points = sort_angles(source[np.where(source[:, 2] == i)])
         indexes = [p + idx for p in range(0, len(points))]
 
         idx = idx + len(points)
 
-        npoints.extend(points);
-        ncoords.append(indexes);
+        npoints.extend(points)
+        ncoords.append(indexes)
 
     dump_wrl(npoints, ncoords)
 
 
 def run():
-    npoints = [];
-    ncoords = [];
+    npoints = []
+    ncoords = []
 
-    idx = 0;
+    idx = 0
 
-    source = load_asc('cloud.asc');
+    source = load_asc('cloud.asc')
 
     zmax, zmin = max(source[:, 2]), min(source[:, 2])
     points = None
@@ -138,8 +138,8 @@ def run():
     previndexs = None
 
     for i in range(int(zmin), int(zmax) + 1):
-        row = np.where(source[:, 2] == i);
-        points = sort_angles(source[row]);
+        row = np.where(source[:, 2] == i)
+        points = sort_angles(source[row])
         indexs = [p + idx for p in range(0, len(points))]
 
         if prevpoints != None:
@@ -170,7 +170,7 @@ def run():
         prevpoints = points
         previndexs = indexs
 
-        npoints.extend(points);
+        npoints.extend(points)
 
     dump_wrl(npoints, ncoords)
 
@@ -185,27 +185,27 @@ def sort_angles(points):
 
 
 def run2():
-    npoints = [];
-    ncoords = [];
+    npoints = []
+    ncoords = []
 
-    idx = 0;
+    idx = 0
 
-    points = load_asc('cloud.asc');
+    points = load_asc('cloud.asc')
 
     zmax, zmin = max(points[:, 2]), min(points[:, 2])
 
     zmax, zmin = 65, 64
 
-    a = points[np.where(points[:, 2] == zmin)];
-    aa = np.arctan2(a[:, 0], a[:, 1]);
-    a = a[np.argsort(aa)];
+    a = points[np.where(points[:, 2] == zmin)]
+    aa = np.arctan2(a[:, 0], a[:, 1])
+    a = a[np.argsort(aa)]
 
-    npoints.extend(list(a));
+    npoints.extend(list(a))
 
     for i in range(int(zmin) + 1, int(zmax) + 1):
-        b = points[np.where(points[:, 2] == i)];
-        ab = np.arctan2(b[:, 0], b[:, 1]);
-        b = b[np.argsort(ab)];
+        b = points[np.where(points[:, 2] == i)]
+        ab = np.arctan2(b[:, 0], b[:, 1])
+        b = b[np.argsort(ab)]
 
         r = [p + idx for p in range(0, len(a))]
 
@@ -226,9 +226,9 @@ def run2():
             ncoords.append((tl, bl, br, tr))
 
         idx = idx + len(a)
-        a = b;
-        aa = ab;
-        npoints.extend(list(b));
+        a = b
+        aa = ab
+        npoints.extend(list(b))
 
     dump_wrl(npoints, ncoords)
 
@@ -236,21 +236,21 @@ def run2():
 def create_indexed_face(a, b, idx):
     coords = []
 
-    ca = [i + idx for i in range(0, len(a))];
+    ca = [i + idx for i in range(0, len(a))]
     cb = [i + idx + len(a) for i in range(0, len(b))]
 
     ca.reverse()
 
     co = [idx]
 
-    co.extend(cb);
-    co.extend(ca);
+    co.extend(cb)
+    co.extend(ca)
 
-    return co;
+    return co
 
 
 def dump_wrl(points, coords, filename="out.wrl"):
-    fp = open('template/template.wrl.tpl');
+    fp = open('template/template.wrl.tpl')
 
     # tpl = fp.read();
 

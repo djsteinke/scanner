@@ -112,7 +112,8 @@ def output_asc_pointset(filename, points):
     argument points A 2D array of points [[X,Y,Z,R,G,B]]
 
     """
-    points = ["%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f" % (x, y, z, r, g, b) for x, y, z, r, g, b in points]
+    points = ["%0.2f %0.2f %0.2f %0.2f %0.2f %0.2f" % (x, y, z, r, g, b) for x, y, z, r, g, b in points]
+    #points = ["%0.2f %0.2f %0.2f" % (x, y, z) for x, y, z in points]
     points = str.join("\n", points)
 
     out = open(filename, "w")

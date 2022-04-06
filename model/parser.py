@@ -21,12 +21,12 @@ import math
 import cv2
 import numpy as np
 from scipy import interpolate
-import time
 
 
 def points_triangulate(points, angle, cam_degree):
     x, y = points
     cam_angle = math.radians(cam_degree)
+
     radius = x / math.sin(cam_angle)
 
     return [

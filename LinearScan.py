@@ -3,10 +3,12 @@ from tkinter.ttk import Progressbar
 from threading import Timer
 from android import Android
 from arduino import Arduino
+from collapsible_pane import CollapsiblePane
 from scan import Scan
 from subprocess import run
 from os import getcwd
 from scan_popup import ScanPopup
+from hdpitkinter import HdpiTk
 
 cam_id = 0
 arduino = Arduino(speed=38400)
@@ -139,10 +141,12 @@ def arduino_connect():
             arduino.open()
         except Exception as e:
             print(str(e))
-    arduino_con_bt['text'] = '0' if arduino.connected else '1'
+    arduino_con_bt['text'] = '-' if arduino.connected else '+'
     if arduino.connected:
         arduino_con_bt.config(bg="#EC7063")
         arduino_con_bt['relief'] = 'sunken'
+        r = rpm.get('1.0', 'end-1c')
+        arduino.send_msg(f'RPM:{r}')
     else:
         arduino_con_bt.config(bg="SystemButtonFace")
         arduino_con_bt['relief'] = 'raised'
@@ -151,12 +155,16 @@ def arduino_connect():
 if __name__ == '__main__':
     #arduino.open()
 
+    #root = HdpiTk()
     root = Tk()
+    root.grid_rowconfigure(0, weight=1)  # this needed to be added
+    root.grid_columnconfigure(0, weight=1)  # as did this
+
     root.title("Scanner")
     # root.geometry("960x540")
     # Create a frame
-    root.columnconfigure(0, weight=1)
-    root.columnconfigure(1, weight=1)
+    #root.columnconfigure(0, weight=1)
+    #root.columnconfigure(1, weight=1)
 
     mn = Frame(root)
     mn.columnconfigure(0, weight=1)
@@ -167,7 +175,7 @@ if __name__ == '__main__':
     mn_row += 1
     label = Label(mn, text="Scanner Setup", font=font_bold)
     label.grid(columnspan=2, column=0, row=mn_row, sticky=W, pady=(20, 0))
-    arduino_con_bt = Button(mn, text="1", width=3, command=arduino_connect)
+    arduino_con_bt = Button(mn, text="+", width=3, command=arduino_connect)
     arduino_con_bt.grid(column=1, row=mn_row, sticky=E)
     mn_row += 1
     label = Label(mn, text="Screw Pitch (TPI):")
@@ -274,11 +282,15 @@ if __name__ == '__main__':
     but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=(20, 0))
 
     mn_row += 1
-    mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
+    mn.pack(padx=10, pady=(0, 10))
+    #mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
 
+    col = CollapsiblePane(root, "<", ">")
+    col.pack(expand=True)
+    #col.grid(column=0, row=2)
     # Create a label in the frame
     lmain = Label(root)
-    lmain.grid(column=1, row=0)
+    #lmain.grid(column=1, row=0)
 
     scan_popup = ScanPopup(root, 0)
     scan = Scan()
