@@ -33,24 +33,24 @@ class Scan(object):
         os.makedirs(self.path)
 
         if self.per_step > 0:
-            motor_steps = 200 * 16 * self.per_step
+            motor_steps = 400 * self.per_step
         else:
-            motor_steps = 200 * 16 / self.steps
+            motor_steps = 400 / self.steps
 
         if not self.arduino.connected:
             self.arduino.open()
 
-        path = getcwd()
+        self.android.open_camera_tmp()
 
         for i in range(0, self.steps):
             self._step = i
-            self.arduino.send_msg("L11")     # Turn ON left laser
+            #self.arduino.send_msg("L11")     # Turn ON left laser
             # self.save_frame(f'left_%s_%04d.jpg' % (self.timestamp, i))
-            self.android.take_picture(f'%s/left_%s_%04d.jpg' % (path, self.timestamp, i))
-            self.arduino.send_msg("L10")     # Turn OFF left laser
+            #self.android.take_picture(f'%s/left_%s_%04d.jpg' % (path, self.timestamp, i))
+            #self.arduino.send_msg("L10")     # Turn OFF left laser
             self.arduino.send_msg("L21")     # Turn ON right laser
             # self.save_frame(f'right_%s_%04d.jpg' % (self.timestamp, i))
-            self.android.take_picture(f'%s/right_%s_%04d.jpg' % (path, self.timestamp, i))
+            self.android.take_picture_tmp(f'%s/right_%s_%04d.jpg' % (self.path, self.timestamp, i))
             self.arduino.send_msg("L20")     # Turn OFF right laser
             # self.save_frame(f'color_%s_%04d.jpg' % (self.timestamp, i))       # take color photo for color object
             self.arduino.send_msg(f"STEP:{motor_steps}:CW")      # turn platform
