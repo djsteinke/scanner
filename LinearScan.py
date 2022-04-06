@@ -7,6 +7,8 @@ from scan import Scan
 from subprocess import run
 from os import getcwd
 from scan_popup import ScanPopup
+from hdpitkinter import HdpiTk
+from time import sleep
 
 cam_id = 0
 arduino = Arduino(speed=38400)
@@ -55,14 +57,19 @@ def connect():
     try:
         if not android_connected:
             if adb(True) == 0:
+                sleep(1)
                 host = "%s.%s.%s.%s" % (host_value1.get('1.0', 'end-1c'), host_value2.get('1.0', 'end-1c'),
                                         host_value3.get('1.0', 'end-1c'), host_value4.get('1.0', 'end-1c'))
-                android.connect(host, int(port_value.get("1.0", 'end-1c')), in_progress)
+                port = int(port_value.get("1.0", 'end-1c'))
+                print(f'host:port {host}:{port}')
+                android.connect_tmp(host, port, in_progress)
         else:
             android.disconnect()
             adb(False)
         android_connected = not android_connected
         connect_android['text'] = 'Disconnect' if android_connected else 'Connect'
+        #android.open_camera_tmp()
+        #android.take_picture_tmp()
     except Exception as e:
         print(str(e))
         adb(False)
@@ -71,7 +78,8 @@ def connect():
 
 def connect_android():
     global popup
-    in_progress("Connecting...", False)
+    if not android_connected:
+        in_progress("Connecting...", False)
     Timer(0.1, connect).start()
 
 
@@ -81,9 +89,14 @@ def scan_clicked():
     pitch = float(screw_pitch.get('1.0', 'end-1c'))
     length = float(screw_length.get('1.0', 'end-1c'))
     scan_popup = ScanPopup(root, scan_steps).open()
-    scan = Scan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step, pitch=pitch,
+    scan = Scan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, pitch=pitch,
                 length=length)
     Timer(0.1, scan.start).start()
+
+
+def take_pic():
+    path = getcwd() + "test.jpg"
+    android.take_picture_tmp(path)
 
 
 def step():
@@ -100,12 +113,14 @@ def stop_scan():
 
 
 def move_right():
-    motor_steps = 200 * 16 * 3
-    arduino.send_msg(f"STEP:{motor_steps}:CCW")  # turn platform
+    s = int(mv_turns.get('1.0', 'end-1c'))
+    motor_steps = 400 * s
+    arduino.send_msg(f"STEP:{motor_steps}:CC")  # turn platform
 
 
 def move_left():
-    motor_steps = 200 * 16 * 3
+    s = int(mv_turns.get('1.0', 'end-1c'))
+    motor_steps = 400 * s
     arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
 
 
@@ -151,7 +166,7 @@ def arduino_connect():
 if __name__ == '__main__':
     #arduino.open()
 
-    root = Tk()
+    root = HdpiTk()
     root.title("Scanner")
     # root.geometry("960x540")
     # Create a frame
@@ -249,7 +264,7 @@ if __name__ == '__main__':
     host_value3.grid(column=4, row=0)
     Label(host_frame, text=".").grid(column=5, row=0)
     host_value4 = Text(host_frame, width=3, height=1)
-    host_value4.insert('1.0', '14')
+    host_value4.insert('1.0', '15')
     host_value4.grid(column=6, row=0, padx=(0, 10))
     host_frame.grid(column=1, row=mn_row, padx=(10, 10), pady=3, sticky=W)
 
@@ -257,7 +272,7 @@ if __name__ == '__main__':
     port_label = Label(mn, text="Port:")
     port_label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     port_value = Text(mn, width=5, height=1)
-    port_value.insert('1.0', '38817')
+    port_value.insert('1.0', '37045')
     port_value.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
     connect_android = Button(mn, text="Connect", command=connect_android, width=10)
@@ -272,6 +287,10 @@ if __name__ == '__main__':
     mn_row += 1
     but_start = Button(mn, text="Start Scan", command=scan_clicked, font=font_bold, width=10)
     but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=(20, 0))
+
+    mn_row += 1
+    bt_pic = Button(mn, text="Pic", command=take_pic)
+    bt_pic.grid(column=0, row=mn_row, pady=(20, 0))
 
     mn_row += 1
     mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
