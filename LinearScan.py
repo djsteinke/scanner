@@ -74,7 +74,12 @@ def connect():
 def connect_android():
     global popup
     in_progress("Connecting...", False)
-    Timer(0.1, connect).start()
+    adb(True)
+    host = "%s.%s.%s.%s" % (host_value1.get('1.0', 'end-1c'), host_value2.get('1.0', 'end-1c'),
+                            host_value3.get('1.0', 'end-1c'), host_value4.get('1.0', 'end-1c'))
+    port = int(port_value.get("1.0", 'end-1c'))
+    android.connect_tmp(host=host, port=port, callback=in_progress)
+    #Timer(0.1, connect).start()
 
 
 def scan_clicked():
@@ -82,14 +87,15 @@ def scan_clicked():
     scan_steps = int(steps_scan.get('1.0', 'end-1c'))
     pitch = float(screw_pitch.get('1.0', 'end-1c'))
     length = float(screw_length.get('1.0', 'end-1c'))
-    scan_popup = ScanPopup(root, scan_steps).open()
+    scan_popup = ScanPopup(root, scan_steps)
+    scan_popup.open()
     scan = Scan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step, pitch=pitch,
                 length=length)
     Timer(0.1, scan.start).start()
 
 
-def step():
-    scan_popup.step(scan.step)
+def step(s):
+    scan_popup.step(s)
 
 
 def scan_complete():
@@ -102,12 +108,14 @@ def stop_scan():
 
 
 def move_right():
-    motor_steps = 200 * 16 * 3
+    turns = float(mv_turns.get('1.0', 'end-1c'))
+    motor_steps = 400 * turns
     arduino.send_msg(f"STEP:{motor_steps}:CCW")  # turn platform
 
 
 def move_left():
-    motor_steps = 200 * 16 * 3
+    turns = float(mv_turns.get('1.0', 'end-1c'))
+    motor_steps = 400 * turns
     arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
 
 
@@ -124,11 +132,11 @@ def laser_one():
 
 def laser_two():
     if laser_two_button['relief'] == 'raised':
-        arduino.send_msg("L11")
+        arduino.send_msg("L21")
         laser_two_button.config(bg="#EC7063")
         laser_two_button['relief'] = 'sunken'
     else:
-        arduino.send_msg("L10")
+        arduino.send_msg("L20")
         laser_two_button.config(bg="SystemButtonFace")
         laser_two_button['relief'] = 'raised'
 
