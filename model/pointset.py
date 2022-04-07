@@ -104,7 +104,7 @@ Shape{
     out.close()
 
 
-def output_asc_pointset(filename, points):
+def output_asc_pointset(filename, points, type='xyz'):
     """
     Write pointset to disk in raw ASCII format .asc
 
@@ -113,7 +113,10 @@ def output_asc_pointset(filename, points):
 
     """
     try:
-        points = ["%0.2f %0.2f %0.2f %0.2f %0.2f %0.2f" % (x, y, z, r, g, b) for x, y, z, r, g, b in points]
+        if type == 'xyz':
+            points = ["%0.2f %0.2f %0.2f" % (x, y, z) for x, y, z, r, g, b in points]
+        if type == 'xyzrgb' or type == 'xyzn':
+            points = ["%0.2f %0.2f %0.2f %0.2f %0.2f %0.2f" % (x, y, z, r, g, b) for x, y, z, r, g, b in points]
     except Exception:
         print(points)
     #points = ["%0.2f %0.2f %0.2f" % (x, y, z) for x, y, z in points]

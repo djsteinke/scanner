@@ -20,7 +20,7 @@ def main():
 
     right = []
     scan_folder = "20220406081736"
-    path = getcwd() + "\\scan\\" + scan_folder
+    path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
 
     # print "Scanning %s for files" % path

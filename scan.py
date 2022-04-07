@@ -29,7 +29,7 @@ class Scan(object):
             print("Arduino not connected. Exiting.")
             exit()
 
-        self.path = os.path.join(self.wd, f"scans/{self.timestamp}")  # create scan dir
+        self.path = os.path.join(self.wd, f"scans/{self.timestamp}")  # create scans dir
         os.makedirs(self.path)
 
         if self.per_step > 0:

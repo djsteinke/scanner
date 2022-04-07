@@ -10,7 +10,7 @@ from PIL import ImageTk, Image
 from android import Android
 
 from arduino import Arduino
-from scan import Scan
+from scans import Scan
 from subprocess import Popen, PIPE
 
 cam_id = 0

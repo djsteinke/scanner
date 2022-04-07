@@ -54,11 +54,11 @@ def main():
                       help="path to uvcapture binary")
     parser.add_option("-o", "--center-offset", action="store", type="int", default="0", dest="offset",
                       help="Offset from center")
-    parser.add_option("-l", "--scan-left", action="store_false", default=True, dest="do_left",
+    parser.add_option("-l", "--scans-left", action="store_false", default=True, dest="do_left",
                       help="Scan for left-side laser")
-    parser.add_option("-r", "--scan-right", action="store_false", default=True, dest="do_right",
+    parser.add_option("-r", "--scans-right", action="store_false", default=True, dest="do_right",
                       help="Scan for right-side laser")
-    parser.add_option("-c", "--scan-color", action="store_true", default="True", dest="do_color",
+    parser.add_option("-c", "--scans-color", action="store_true", default="True", dest="do_color",
                       help="Extract color information")
     parser.add_option("-x", "--roi-top", action="store", type="int", default="0", dest="left", help="ROI offset left")
     parser.add_option("-y", "--roi-left", action="store", type="int", default="0", dest="top", help="ROI offset top")

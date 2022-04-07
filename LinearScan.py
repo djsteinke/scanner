@@ -103,7 +103,7 @@ def scan_complete():
 
 
 def stop_scan():
-    # TODO stop scan
+    # TODO stop scans
     tmp = 1
 
 
