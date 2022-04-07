@@ -40,7 +40,8 @@ class Scan(object):
         if not self.arduino.connected:
             self.arduino.open()
 
-        self.android.open_camera_tmp()
+        #self.android.open_camera_tmp()
+        self.arduino.send_msg("L21")     # Turn ON right laser
 
         for i in range(0, self.steps):
             self._step = i
@@ -48,14 +49,14 @@ class Scan(object):
             # self.save_frame(f'left_%s_%04d.jpg' % (self.timestamp, i))
             #self.android.take_picture(f'%s/left_%s_%04d.jpg' % (path, self.timestamp, i))
             #self.arduino.send_msg("L10")     # Turn OFF left laser
-            self.arduino.send_msg("L21")     # Turn ON right laser
-            # self.save_frame(f'right_%s_%04d.jpg' % (self.timestamp, i))
+            #self.arduino.send_msg("L21")     # Turn ON right laser
+            #self.save_frame(f'right_%s_%04d.jpg' % (self.timestamp, i))
             self.android.take_picture_tmp(f'%s/right_%s_%04d.jpg' % (self.path, self.timestamp, i))
-            self.arduino.send_msg("L20")     # Turn OFF right laser
+            #self.arduino.send_msg("L20")     # Turn OFF right laser
             # self.save_frame(f'color_%s_%04d.jpg' % (self.timestamp, i))       # take color photo for color object
             self.arduino.send_msg(f"STEP:{motor_steps}:CW")      # turn platform
             if self._step_callback is not None:
-                self._step_callback()
+                self._step_callback(i+1)
 
         # self.arduino.close()     # disconnect arduino
 

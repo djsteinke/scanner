@@ -51,10 +51,12 @@ class Android(object):
     def open_camera_tmp(self):
         res = run(['adb', '-s', self.d, 'shell', 'input', 'tap', '900', '1800'], capture_output=True)
         print(res)
+        sleep(2)
+        run(['adb', '-s', self.d, 'shell', 'input', 'tap', '550', '1100'], capture_output=True)
+        sleep(2)
 
     def take_picture_tmp(self, path):
-        run(['adb', '-s', self.d, 'shell', 'input', 'tap', '550', '1100'], capture_output=True)
-        sleep(1)
+        #sleep(1)
         run(['adb', '-s', self.d, 'shell', 'input', 'keyevent', 'KEYCODE_CAMERA'], capture_output=True)
         print('picture taken')
         sleep(1)

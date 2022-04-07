@@ -17,9 +17,12 @@ def points_triangulate(points, y_offset, l_dist):
     x_offset = y_offset * math.tan(-60)
 
     return [
-        calc_x + x_offset,
-        calc_y + y_offset,
-        y * 1.00
+        calc_x,
+        -y_offset,
+        800-y * 1.00,
+        0.0,
+        0.0,
+        0.0
     ]
 
 
@@ -70,6 +73,32 @@ def points_max_cols(img, threshold=(200, 255), xR=None, yR=None):
 
     return xy
 
+count = 0
+def calc_normals(xyz):
+    global count
+    length = len(xyz)
+
+    for i in range(0, length-1):
+        z0 = xyz[i][2]
+        z1 = xyz[i+1][2]
+        x0 = xyz[i][0]
+        x1 = xyz[i+1][0]
+
+        if x1-x0 == 0:
+            m = 1
+        else:
+            m = (z1-z0)/(x1-x0)
+
+        if count < 100:
+            print(m)
+        count += 1
+        #x = math.sqrt(25/(1+1/math.pow(m, 2))) + x0
+        z = -1/m*(x1-x0) + z0
+        xyz[i][3] = x1
+        xyz[i][4] = xyz[i][1]
+        xyz[i][5] = z
+    return xyz
+
 
 def points_process_images(images, threshold_min=200, threshold_max=255):
     """
@@ -91,13 +120,13 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
         h, w, c = img.shape
 
         xR = (300, 500)
-        yR = (550, 800)
+        yR = (500, 800)
 
         xy = points_max_cols(img, xR=xR, yR=yR)
 
         xyz = [points_triangulate((x - (w / 2), y), x_offset, l_distance) for x, y in xy]
-
-        xyz = [[x, y, z, 0.25, 0.25, 0.9] for x, y, z in xyz]
+        xyz = calc_normals(xyz)
+        xyz = [[x, y, z, xn, xy, xz] for x, y, z, xn, xy, xz in xyz]
 
         points.extend(xyz)
 
@@ -117,8 +146,8 @@ def main():
 
     right = []
     scan_folder = "20220406145334"
-    path = getcwd() + "\\scan\\" + scan_folder
-    filename = f'{path}\\{scan_folder}.xyzrgb'
+    path = getcwd() + "\\scans\\" + scan_folder
+    filename = f'{path}\\{scan_folder}.xyzn'
 
     # print "Scanning %s for files" % path
 
@@ -139,8 +168,8 @@ def main():
 
 def tmp_pic():
     scan_folder = "20220406145334"
-    pic = f"right_{scan_folder}_0013.jpg"
-    path = getcwd() + "\\scan\\" + scan_folder + '\\' + pic
+    pic = f"right_{scan_folder}_0089.jpg"
+    path = getcwd() + "\\scans\\" + scan_folder + '\\' + pic
 
     img = cv2.imread(path)
     h, w, c = img.shape
@@ -149,7 +178,7 @@ def tmp_pic():
     h, w, c = img.shape
 
     xR = (300, 500)
-    yR = (550, 800)
+    yR = (500, 800)
 
     xy = points_max_cols(img, xR=xR, yR=yR)
     print(xy)

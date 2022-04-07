@@ -3,7 +3,7 @@ from tkinter.ttk import Progressbar
 
 
 class ScanPopup(object):
-    def __init__(self, root, steps):
+    def __init__(self, root=None, steps=None):
         self.root = root
         self.steps = steps
         self.tl = None
