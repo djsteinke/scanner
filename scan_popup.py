@@ -16,16 +16,20 @@ class ScanPopup(object):
         self.cb = Button(self.tl, text="Cancel", command=self.cancel)
         self.pb = Progressbar(self.tl, orient=HORIZONTAL, length=200, mode='determinate')
         self.vl = Label(self.tl, text='Step: %d/%d' % (0, self.steps))
-        self.tl.geometry('300x120+100+450')
+        self.tl.geometry('300x140+100+450')
         self.vl.pack(pady=(20, 0))
         self.pb.pack(pady=(3, 0))
         self.cb.pack(pady=(6, 0))
         self.tl.grab_set()
 
+    def error(self, msg):
+        self.vl['text'] = msg
+        self.cb['text'] = 'Close'
+
     def step(self, val):
         per = val / self.steps * 100
         self.pb['value'] = per
-        self.vl['text'] = 'Step: %d/%d' % (val, 200)
+        self.vl['text'] = 'Step: %d/%d' % (val, self.steps)
         if self.pb['value'] == 100:
             self.vl['text'] = 'Scan complete.'
             self.cb['text'] = 'Close'

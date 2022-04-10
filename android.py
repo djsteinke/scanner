@@ -69,6 +69,8 @@ class Android(object):
                 break
             sleep(1)
         res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', path], capture_output=True)
+        # adb shell rm -f /sdcard/DCIM/Image.jpeg
+        run(['adb', '-s', self.d, 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'], capture_output=True)
         print(res)
 
     def take_picture(self, path='img.jpg'):
@@ -79,3 +81,7 @@ class Android(object):
             filename = self.device.shell('ls -Art /storage/emulated/0/DCIM/Camera | tail -n 1')  # get file name
             print(filename)
             self.device.pull(f'/storage/emulated/0/DCIM/Camera/{filename}', path)  # copy file
+
+    def sync_media_service(self):
+        run(['adb', '-s', self.d, 'am', 'broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE',
+             '-d', f'file:/storage/emulated/0/DCIM/Camera'], capture_output=True)

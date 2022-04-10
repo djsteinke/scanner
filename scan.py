@@ -2,24 +2,20 @@ import os
 import cv2
 from imutils import rotate_bound
 from time import strftime
-from os import getcwd
 
 
 class Scan(object):
-    def __init__(self, cap=None, arduino=None, android=None, d="/", w=640, h=480, s=100, c=None, r=False, sc=None,
+    def __init__(self, cap=None, arduino=None, android=None, d="/", s=100, c=None, sc=None,
                  pitch=0, length=0.0):
         self.cap = cap
         self.arduino = arduino
         self.android = android
         self.wd = d
-        self.width = w
-        self.height = h
         self.steps = s
         self._step = 0
         self._callback = c
         self._step_callback = sc
         self.path = None
-        self.rotate = r
         self.per_step = length/s*pitch
         print(self.per_step)
         self.timestamp = strftime('%Y%m%d%H%M%S')

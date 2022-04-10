@@ -4,7 +4,7 @@ from threading import Timer
 from android import Android
 from arduino import Arduino
 from collapsible_pane import CollapsiblePane
-from scan import Scan
+from linear_scan import LinearScan
 from subprocess import run
 from os import getcwd
 from scan_popup import ScanPopup
@@ -89,13 +89,20 @@ def scan_clicked():
     length = float(screw_length.get('1.0', 'end-1c'))
     scan_popup = ScanPopup(root, scan_steps)
     scan_popup.open()
-    scan = Scan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step, pitch=pitch,
-                length=length)
+    ll = use_left_laser.get() == 1
+    rl = use_right_laser.get() == 1
+    metric = use_metric.get() == 1
+    print(ll, rl)
+    scan = LinearScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step, pitch=pitch,
+                      length=length, rl=rl, ll=ll, metric=metric)
     Timer(0.1, scan.start).start()
 
 
 def step(s):
-    scan_popup.step(s)
+    if s == -1:
+        scan_popup.error("ERROR:\nArduino not connected.\nConnect arduino and try again.")
+    else:
+        scan_popup.step(s)
 
 
 def scan_complete():
@@ -185,23 +192,29 @@ if __name__ == '__main__':
     label.grid(columnspan=2, column=0, row=mn_row, sticky=W, pady=(20, 0))
     arduino_con_bt = Button(mn, text="+", width=3, command=arduino_connect)
     arduino_con_bt.grid(column=1, row=mn_row, sticky=E)
+    use_metric = IntVar(value=1)
     mn_row += 1
-    label = Label(mn, text="Screw Pitch (TPI):")
+    label = Label(mn, text="Metric:")
+    label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
+    metric_cb = Checkbutton(mn, variable=use_metric)
+    metric_cb.grid(column=1, row=mn_row, padx=(5, 0), sticky=W)
+    mn_row += 1
+    label = Label(mn, text="Screw Pitch:")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     screw_pitch = Text(mn, width=3, height=1)
-    screw_pitch.insert('1.0', '18')
+    screw_pitch.insert('1.0', '2')
     screw_pitch.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
-    label = Label(mn, text="Screw Length (in):")
+    label = Label(mn, text="Screw Length:")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     screw_length = Text(mn, width=3, height=1)
-    screw_length.insert('1.0', '10')
+    screw_length.insert('1.0', '300')
     screw_length.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
     label = Label(mn, text="Steps/Scan:")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     steps_scan = Text(mn, width=3, height=1)
-    steps_scan.insert('1.0', '200')
+    steps_scan.insert('1.0', '150')
     steps_scan.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
     label = Label(mn, text="Speed (rpm):")
@@ -293,14 +306,14 @@ if __name__ == '__main__':
     mn.pack(padx=10, pady=(0, 10))
     #mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
 
-    col = CollapsiblePane(root, "<", ">")
-    col.pack(expand=True)
+    #col = CollapsiblePane(root, "<", ">")
+    #col.pack(expand=True)
     #col.grid(column=0, row=2)
     # Create a label in the frame
     lmain = Label(root)
     #lmain.grid(column=1, row=0)
 
     scan_popup = ScanPopup(root, 0)
-    scan = Scan()
+    scan = LinearScan()
 
     root.mainloop()
