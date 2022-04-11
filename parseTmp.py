@@ -10,7 +10,7 @@ from model.pointset import *
 count = 0
 
 
-def points_triangulate_cs(points, y_offset):
+def points_triangulate(points, y_offset):
 
     cam_degree = 30
     x, y = points
@@ -22,11 +22,11 @@ def points_triangulate_cs(points, y_offset):
         calc_x,
         calc_y,
         y_roi[1]-y * 1.00,
-        0.2, 0, 0.05
+        0.0, 0.0, 0.0
     ]
 
 
-def points_triangulate(points, y_offset):
+def points_triangulate_ls(points, y_offset):
 
     cam_degree = 30
     x, y = points
@@ -40,6 +40,21 @@ def points_triangulate(points, y_offset):
         -y_offset,
         800-y * 1.00,
         0.0, 0.0, 0.0
+    ]
+
+
+def points_triangulate_new(points, y_offset, z_zero):
+    cam_degree = 30
+    px, py = points
+    cam_angle = math.radians(cam_degree)
+
+    x = px / math.tan(cam_angle) * 1.0
+    y = (px - y_offset) * 1.0
+
+    return [
+        x,
+        y,
+        z_zero - py
     ]
 
 
@@ -195,14 +210,15 @@ def get_roi(path):
     yroi = [0, 0]
     img = cv2.imread(path)
     h, w, c = img.shape
-    h_tmp = int(h / 4)
-    w_tmp = int(w / 4)
+    shrink = 6
+    h_tmp = int(h / shrink)
+    w_tmp = int(w / shrink)
     roi = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LINEAR_EXACT)
     r = cv2.selectROI("ROI", roi)
-    xroi[0] = int(r[0]) * 4
-    xroi[1] = int(r[0] + r[2]) * 4
-    yroi[0] = int(r[1]) * 4
-    yroi[1] = int(r[1] + r[3]) * 4
+    xroi[0] = int(r[0]) * shrink
+    xroi[1] = int(r[0] + r[2]) * shrink
+    yroi[0] = int(r[1]) * shrink
+    yroi[1] = int(r[1] + r[3]) * shrink
     print('ROI')
     print(xroi, yroi)
     cv2.destroyWindow("ROI")
@@ -214,8 +230,8 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
     extract 3d pixels and colors from either left or right set of images
     """
     global x_roi, y_roi
-    turns = 1.8
-    per_turn = 1.0/18.0*25.4
+    turns = 1
+    per_turn = 2
     x_offset_pic = turns * per_turn
     points = []
     x_roi, y_roi = get_roi(images[0])
@@ -256,7 +272,7 @@ def parse_images(images_right):
 def main():
 
     right = []
-    scan_folder = "20220407103614"
+    scan_folder = "20220410105543"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
 
