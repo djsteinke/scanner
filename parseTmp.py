@@ -5,6 +5,7 @@ import math
 import cv2
 import numpy as np
 from model.pointset import *
+from json import load
 
 
 count = 0
@@ -43,33 +44,19 @@ def points_triangulate_ls(points, y_offset):
     ]
 
 
-def points_triangulate_new(points, y_offset, z_zero):
+def points_triangulate_cir(points, a):
     cam_degree = 30
     px, py = points
     cam_angle = math.radians(cam_degree)
+    angle = math.radians(a)
 
-    x = px / math.tan(cam_angle) * 1.0
-    y = (px - y_offset) * 1.0
-
-    return [
-        x,
-        y,
-        z_zero - py
-    ]
-
-
-def points_triangulate_old(points, y_offset, l_dist):
-    cam_degree = 30
-    x, y = points
-    cam_angle = math.radians(cam_degree)
-    angle = math.radians(0)
-
-    radius = x / math.sin(cam_angle)
+    radius = px / math.sin(cam_angle)
 
     return [
         radius * math.cos(angle),
-        radius * math.sin(angle) + y_offset,
-        y * 1.00
+        radius * math.sin(angle),
+        y_roi[1] - py * 1.00,
+        0.0, 0.0, 0.0
     ]
 
 
@@ -237,7 +224,7 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
     x_roi, y_roi = get_roi(images[0])
     x_offset_pic = x_offset_pic * scaler / ratio
     x_offset = 0.0
-    #images = images[40:41]
+    # images = images[40:41]
     for i, path in enumerate(images):
         print("II: %03d/%03d processing %s" % (i, len(images), path))
         img = cv2.imread(path)
@@ -248,12 +235,15 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
         h, w, c = img.shape
 
         xy = points_max_cols(img)
-        xyz = [points_triangulate((x - (w / 2), y), x_offset) for x, y in xy]
+        if details['type'] == "circular":
+            xyz = [points_triangulate_cir((x - (w / 2), y), x_offset) for x, y in xy]
+            x_offset += details['dps']
+        else:
+            xyz = [points_triangulate((x - (w / 2), y), x_offset) for x, y in xy]
+            x_offset -= x_offset_pic
         xyz = calc_normals(xyz)
         xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz if x >= 0]
         points.extend(xyz)
-
-        x_offset -= x_offset_pic
 
     return points
 
@@ -270,18 +260,28 @@ def parse_images(images_right):
 
 
 def main():
-
+    global details
     right = []
-    scan_folder = "20220410105543"
+    color = []
+    scan_folder = "20220407103614"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
+
+    details_path = f'{getcwd()}\\scans\\details.json'
+    f = open(details_path, 'r')
+    details = load(f)
+    print(details)
 
     # print "Scanning %s for files" % path
 
     right = glob.glob("%s/right*" % path.rstrip('/'))
     right.sort()
 
-    steps = len(right)
+    if details['color']:
+        color = glob.glob("%s/color*" % path.rstrip('/'))
+        color.sort()
+
+    steps = details['steps']
 
     print("I: processing %d steps" % steps)
 
@@ -380,6 +380,7 @@ def process_calibration_pics():
 
 
 if __name__ == "__main__":
+    details = {}
     x_roi = [0, 0]
     y_roi = [0, 0]
     scaler = 10.1 #(px/mm)
