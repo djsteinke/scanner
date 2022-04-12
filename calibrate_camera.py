@@ -14,8 +14,8 @@ from os import path
 
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-nx = 11      # nx: number of grids in x axis
-ny = 6     # ny: number of grids in y axis
+nx = 6      # nx: number of grids in x axis
+ny = 9     # ny: number of grids in y axis
 
 objp = np.zeros((nx * ny, 3), np.float32)
 objp[:, :2] = np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
@@ -38,7 +38,7 @@ def get_p2p_dist(p):
     avg_x = []
     avg_y = []
     for y in range(0, ny):
-        for x in range(0, nx-1):
+        for x in range(0, nx):
             x0 = p[y*x+x, 0, 0]
             y0 = p[y*x+x, 0, 1]
             x1 = p[y*x+x+1, 0, 0]
@@ -47,7 +47,7 @@ def get_p2p_dist(p):
             #print(x0, y0, x1, y1, d)
             avg_x.append(d)
     for x in range(0, nx):
-        for y in range(0, ny-1):
+        for y in range(0, ny):
             x0 = p[y*x+x, 0, 0]
             y0 = p[y*x+x, 0, 1]
             x1 = p[y*x+x+1, 0, 0]

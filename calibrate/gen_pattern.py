@@ -77,6 +77,8 @@ class PatternMaker:
         c.save(self.output)
 
 
+# -T checkerboard -a Letter
+
 def main():
     # parse command line options
     parser = argparse.ArgumentParser(description="generate camera-calibration pattern", add_help=False)
@@ -98,7 +100,7 @@ def main():
     parser.add_argument("-h", "--page_height", help="page height in units", default=argparse.SUPPRESS, action="store",
                         dest="page_height", type=float)
     parser.add_argument("-a", "--page_size", help="page size, superseded if -h and -w are set", default="A4", action="store",
-                        dest="page_size", choices=["A0", "A1", "A2", "A3", "A4", "A5"])
+                        dest="page_size", choices=["A0", "A1", "A2", "A3", "A4", "A5", "Letter"])
     args = parser.parse_args()
 
     show_help = args.show_help
@@ -119,7 +121,7 @@ def main():
         page_size = args.page_size
         # page size dict (ISO standard, mm) for easy lookup. format - size: [width, height]
         page_sizes = {"A0": [840, 1188], "A1": [594, 840], "A2": [420, 594], "A3": [297, 420], "A4": [210, 297],
-                      "A5": [148, 210]}
+                      "A5": [148, 210], "Letter": [215.9, 279.4]}
         page_width = page_sizes[page_size][0]
         page_height = page_sizes[page_size][1]
     pm = PatternMaker(columns, rows, output, units, square_size, radius_rate, page_width, page_height)
