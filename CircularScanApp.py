@@ -120,13 +120,13 @@ def stop_scan():
 
 def move_right():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = 360 / turns * 400
+    motor_steps = int((200*16) / 360 * turns)
     arduino.send_msg(f"STEP:{motor_steps}:CCW")  # turn platform
 
 
 def move_left():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = 360 / turns * 400
+    motor_steps = int((200*16) / 360 * turns)
     arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
 
 
