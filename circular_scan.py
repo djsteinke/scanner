@@ -3,9 +3,9 @@ from time import strftime
 import json
 
 
-class LinearScan(object):
+class CircularScan(object):
     def __init__(self, cap=None, arduino=None, android=None, d="/", s=100, c=None, sc=None,
-                 pitch=1, length=0.0, ll=False, rl=True, metric=True, color=False):
+                 degrees=1, ll=False, rl=True, color=False):
         self.cap = cap
         self.arduino = arduino
         self.android = android
@@ -18,13 +18,8 @@ class LinearScan(object):
         self._step_callback = sc
         self._lasers = [False, False]       # left/right
         self.path = None
-        self.pitch = pitch
-        self.metric = metric
-        if metric:
-            ps = length/s/pitch
-        else:
-            ps = length/s*pitch
-        self.per_step = ps
+        self.degrees = degrees
+        self.per_step = 360 / degrees / self.steps
         print(self.per_step)
         self.timestamp = strftime('%Y%m%d%H%M%S')
 
@@ -78,17 +73,13 @@ class LinearScan(object):
             self._callback()
 
     def save_details(self):
-        if self.metric:
-            distance = self.pitch*self.per_step
-        else:
-            distance = 25.4/18.0*self.per_step
         details = {"date": self.timestamp,
                    "steps": self.steps,
                    "ll": self.ll,
                    "rl": self.rl,
                    "color": self.color,
-                   "type": "linear",
-                   "dps": '%0.2f' % distance}
+                   "type": "circular",
+                   "dps": '%0.2f' % self.per_step}
         print(details)
         d_path = self.path + "\\details.json"
         f = open(d_path, 'w')

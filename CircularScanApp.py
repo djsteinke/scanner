@@ -4,10 +4,11 @@ from threading import Timer
 from android import Android
 from arduino import Arduino
 from collapsible_pane import CollapsiblePane
-from linear_scan import LinearScan
+from circular_scan import CircularScan
 from subprocess import run
 from os import getcwd
 from scan_popup import ScanPopup
+from calibration import Calibration
 from hdpitkinter import HdpiTk
 
 cam_id = 0
@@ -84,18 +85,21 @@ def connect_android():
 def scan_clicked():
     global scan_popup, scan
     scan_steps = int(steps_scan.get('1.0', 'end-1c'))
-    pitch = float(screw_pitch.get('1.0', 'end-1c'))
-    length = float(screw_length.get('1.0', 'end-1c'))
+    degrees = float(scan_degrees.get('1.0', 'end-1c'))
     scan_popup = ScanPopup(root, scan_steps)
     scan_popup.open()
     ll = use_left_laser.get() == 1
     rl = use_right_laser.get() == 1
     color = use_color.get() == 1
-    metric = use_metric.get() == 1
-    print(ll, rl)
-    scan = LinearScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step, pitch=pitch,
-                      length=length, rl=rl, ll=ll, metric=metric, color=color)
+    scan = CircularScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step,
+                        degrees=degrees, rl=rl, ll=ll, color=color)
     Timer(0.1, scan.start).start()
+
+
+def calibration_clicked():
+    d = getcwd() + "\\calibration"
+    calibration = Calibration(arduino=arduino, android=android, path=d)
+    Timer(0.1, calibration.start).start()
 
 
 def step(s):
@@ -116,13 +120,13 @@ def stop_scan():
 
 def move_right():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = 400 * turns
+    motor_steps = 360 / turns * 400
     arduino.send_msg(f"STEP:{motor_steps}:CCW")  # turn platform
 
 
 def move_left():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = 400 * turns
+    motor_steps = 360 / turns * 400
     arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
 
 
@@ -168,18 +172,12 @@ def arduino_connect():
 
 
 if __name__ == '__main__':
-    #arduino.open()
-
     #root = HdpiTk()
     root = Tk()
     root.grid_rowconfigure(0, weight=1)  # this needed to be added
     root.grid_columnconfigure(0, weight=1)  # as did this
 
-    root.title("Linear Scanner")
-    # root.geometry("960x540")
-    # Create a frame
-    #root.columnconfigure(0, weight=1)
-    #root.columnconfigure(1, weight=1)
+    root.title("Circular Scanner")
 
     mn = Frame(root)
     mn.columnconfigure(0, weight=1)
@@ -194,22 +192,11 @@ if __name__ == '__main__':
     arduino_con_bt.grid(column=1, row=mn_row, sticky=E)
     use_metric = IntVar(value=1)
     mn_row += 1
-    label = Label(mn, text="Metric:")
+    label = Label(mn, text="Degrees:")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
-    metric_cb = Checkbutton(mn, variable=use_metric)
-    metric_cb.grid(column=1, row=mn_row, padx=(5, 0), sticky=W)
-    mn_row += 1
-    label = Label(mn, text="Screw Pitch:")
-    label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
-    screw_pitch = Text(mn, width=3, height=1)
-    screw_pitch.insert('1.0', '2')
-    screw_pitch.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
-    mn_row += 1
-    label = Label(mn, text="Screw Length:")
-    label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
-    screw_length = Text(mn, width=3, height=1)
-    screw_length.insert('1.0', '300')
-    screw_length.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
+    scan_degrees = Text(mn, width=3, height=1)
+    scan_degrees.insert('1.0', '360')
+    scan_degrees.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
     label = Label(mn, text="Steps/Scan:")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
@@ -220,7 +207,7 @@ if __name__ == '__main__':
     label = Label(mn, text="Speed (rpm):")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     rpm = Text(mn, width=3, height=1)
-    rpm.insert('1.0', '10')
+    rpm.insert('1.0', '1')
     rpm.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     use_left_laser = IntVar()
     use_right_laser = IntVar(value=1)
@@ -240,6 +227,7 @@ if __name__ == '__main__':
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     color_cb = Checkbutton(mn, variable=use_color)
     color_cb.grid(column=1, row=mn_row, padx=(5, 0), sticky=W)
+    mn_row += 1
     fr = Frame(mn)
     mv_left_button = Button(fr, text="<-", command=move_left, width=5)
     mv_left_button.grid(column=0, row=0, pady=3)
@@ -296,12 +284,10 @@ if __name__ == '__main__':
     mn_row += 1
     connect_android = Button(mn, text="Connect", command=connect_android, width=10)
     connect_android.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=3)
-    #connect_android = Button(mn, text="Disconnect", command=laser_one_control, width=10)
-    #connect_android.grid(column=1, row=mn_row, padx=(10, 10), sticky=EW)
 
-    #f1 = Frame(mn, pady=10)
-    #f1.columnconfigure(0, weight=1)
-    #f1.columnconfigure(1, weight=1)
+    mn_row += 1
+    but_start = Button(mn, text="Start Calibration", command=calibration_clicked, font=font_bold, width=10)
+    but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=(20, 0))
 
     mn_row += 1
     but_start = Button(mn, text="Start Scan", command=scan_clicked, font=font_bold, width=10)
@@ -309,16 +295,11 @@ if __name__ == '__main__':
 
     mn_row += 1
     mn.pack(padx=10, pady=(0, 10))
-    #mn.grid(column=0, row=0, padx=10, pady=10, sticky=N)
-
-    #col = CollapsiblePane(root, "<", ">")
-    #col.pack(expand=True)
-    #col.grid(column=0, row=2)
     # Create a label in the frame
     lmain = Label(root)
     #lmain.grid(column=1, row=0)
 
     scan_popup = ScanPopup(root, 0)
-    scan = LinearScan()
+    scan = CircularScan()
 
     root.mainloop()

@@ -70,7 +70,7 @@ class Android(object):
             sleep(1)
         res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', path], capture_output=True)
         # adb shell rm -f /sdcard/DCIM/Image.jpeg
-        run(['adb', '-s', self.d, 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'], capture_output=True)
+        run(['adb', '-s', self.d, 'shell', 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'], capture_output=True)
         print(res)
 
     def take_picture(self, path='img.jpg'):
