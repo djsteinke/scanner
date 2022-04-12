@@ -1,6 +1,24 @@
 import numpy as np
 from os import getcwd
 import open3d as o3d
+import math
+
+
+def temp():
+    points = []
+    for i in range(0, 360, 3):
+        man_rad = ((i*1.0)/360.0)*(2*math.pi)
+        r = 30.0
+        x = r*math.cos(man_rad)
+        y = r*math.sin(man_rad)
+        z = 1.0
+        points.append([x, y, z])
+    print(points[1])
+    a = np.array(points)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(a)
+    print(pcd)
+    o3d.visualization.draw_geometries([pcd], width=1280, height=720)
 
 
 def main():
@@ -39,4 +57,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    temp()

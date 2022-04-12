@@ -6,7 +6,7 @@ from arduino import Arduino
 from collapsible_pane import CollapsiblePane
 from circular_scan import CircularScan
 from subprocess import run
-from os import getcwd
+from os import getcwd, makedirs
 from scan_popup import ScanPopup
 from calibration import Calibration
 from hdpitkinter import HdpiTk
@@ -102,8 +102,10 @@ def scan_clicked():
 
 def calibration_clicked():
     d = getcwd() + "\\calibration"
-    calibration = Calibration(arduino=arduino, android=android, path=d)
-    Timer(0.1, calibration.start).start()
+    makedirs(d)
+    android.take_picture(d + "\\calibration.jpg")
+    #calibration = Calibration(arduino=arduino, android=android, path=d)
+    #Timer(0.1, calibration.start).start()
 
 
 def step(s):
@@ -290,7 +292,7 @@ if __name__ == '__main__':
     connect_android.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=3)
 
     mn_row += 1
-    but_start = Button(mn, text="Start Calibration", command=calibration_clicked, font=font_bold, width=10)
+    but_start = Button(mn, text="Calibration", command=calibration_clicked, font=font_bold, width=10)
     but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=(20, 0))
 
     mn_row += 1
