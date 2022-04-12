@@ -21,7 +21,6 @@ class CircularScan(object):
         self.degrees = degrees
         self.per_step = 360 / degrees / self.steps
         print(self.per_step)
-        self.path_dir = ""
         self.timestamp = strftime('%Y%m%d%H%M%S')
 
     def start(self):
@@ -37,9 +36,6 @@ class CircularScan(object):
                 self._step_callback(-1)
             exit()
 
-        #self.path_dir = self.wd + '\\scans\\' + self.timestamp
-        self.path_dir = os.path.join(self.wd, 'scans')
-        self.path_dir = os.path.join(self.path_dir, self.timestamp)
         self.path = os.path.join(self.wd, f"scans\\{self.timestamp}")  # create scans dir
         os.makedirs(self.path)
         self.save_details()
@@ -55,19 +51,19 @@ class CircularScan(object):
                 if not self._lasers[0]:
                     self.arduino.send_msg("L11")     # Turn ON left laser
                     self._lasers[0] = True
-                self.android.take_picture_tmp(f'%s\\left_%04d.jpg' % (self.path_dir, i))
+                self.android.take_picture(f'%s\\left_%04d.jpg' % (self.path, i))
                 self.arduino.send_msg("L10")     # Turn OFF left laser
                 self._lasers[0] = False
             if self.rl:
                 if not self._lasers[1]:
                     self.arduino.send_msg("L21")     # Turn ON right laser
                     self._lasers[1] = True
-                self.android.take_picture_tmp(f'%s\\right_%04d.jpg' % (self.path_dir, i))
+                self.android.take_picture(f'%s\\right_%04d.jpg' % (self.path, i))
                 if self.ll or self.color:
                     self.arduino.send_msg("L20")     # Turn OFF right laser
                     self._lasers[1] = False
             if self.color:
-                self.android.take_picture_tmp(f'%s\\color_%04d.jpg' % (self.path_dir, i))
+                self.android.take_picture(f'%s\\color_%04d.jpg' % (self.path, i))
             self.arduino.send_msg(f"STEP:{motor_steps}:CW")      # turn platform
             if self._step_callback is not None:
                 self._step_callback(i+1)
@@ -77,13 +73,16 @@ class CircularScan(object):
             self._callback()
 
     def save_details(self):
+        dps = int(200.0 * 16.0 * self.per_step)
+        print(dps)
+        dps = 200.0 * 16.0 / dps
         details = {"date": self.timestamp,
                    "steps": self.steps,
                    "ll": self.ll,
                    "rl": self.rl,
                    "color": self.color,
                    "type": "circular",
-                   "dps": '%0.2f' % self.per_step}
+                   "dps": '%0.2f' % dps}
         print(details)
         d_path = self.path + "\\details.json"
         f = open(d_path, 'w')

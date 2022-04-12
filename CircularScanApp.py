@@ -34,8 +34,8 @@ def adb(start):
     return res.returncode
 
 
-def in_progress(text, close):
-    global popup
+def in_progress(text, close, result=None):
+    global popup, android_connected
     if not close:
         popup = Toplevel(root)
         popup.geometry('300x100+100+450')
@@ -51,6 +51,9 @@ def in_progress(text, close):
     else:
         if popup is not None:
             popup.destroy()
+        if result == "connected":
+            android_connected = not android_connected
+            connect_android['text'] = 'Disconnect' if android_connected else 'Connect'
 
 
 def connect():
@@ -73,13 +76,14 @@ def connect():
 
 
 def connect_android():
-    global popup
+    global popup, android
     in_progress("Connecting...", False)
     adb(True)
     host = "%s.%s.%s.%s" % (host_value1.get('1.0', 'end-1c'), host_value2.get('1.0', 'end-1c'),
                             host_value3.get('1.0', 'end-1c'), host_value4.get('1.0', 'end-1c'))
     port = int(port_value.get("1.0", 'end-1c'))
-    android.connect_tmp(host=host, port=port, callback=in_progress)
+    android = Android(host=host, port=port, cb=in_progress)
+    Timer(0.1, android.connect).start()
 
 
 def scan_clicked():
