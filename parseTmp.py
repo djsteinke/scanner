@@ -72,24 +72,24 @@ def points_max_cols(img, threshold=(200, 255)):
     for i in range(y_roi[0], y_roi[1], 3):
         mx = 0
         mv = [0, 0, 0]
+        mvTemp = 0
         for x in range(x_roi[0], x_roi[1], 3):
-            try:
-                if img[i, x, 2] > mv[2]:
-                    mv = img[i, x]
-                    mx = x
-                """
-                avg = sum(img[i, x])/3
-                if avg > mv:
-                    mv = avg
-                    mx = x
-                """
-            except IndexError as e:
-                print(f'x[{x}] y[{i}]')
+            """
+            if img[i, x, 2] > mv[2]:
+                mv = img[i, x]
+                mx = x
+            """
+            avg = sum(img[i, x])*1.0
+            if avg > mvTemp and avg >= threshold[0]:
+                mvTemp = avg
+                mx = x
 
         #valid = i < m*mx + b
         valid = True
-        if mv[2] > tmin and mv[0] > 50 and valid:
+        if mvTemp > 0:
             xy.append((mx, i))
+        #if mv[2] > tmin and valid:
+        #    xy.append((mx, i))
 
     return xy
 
@@ -235,11 +235,22 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
         h, w, c = img.shape
 
         xy = points_max_cols(img)
+        f_xy = list()
+        r = float(w) * 0.01
+        for v in range(2, len(xy) - 2):
+            x0, _ = xy[i - 2]
+            x1, _ = xy[i - 1]
+            x2, _ = xy[i]
+            x3, _ = xy[i + 1]
+            x4, _ = xy[i + 2]
+            if abs(float(x0 + x1 + x3 + x4) / 4.0 - x2) < r:
+                f_xy.append(xy[i])
+
         if details['type'] == "circular":
-            xyz = [points_triangulate_cir((x - (w / 2), y), x_offset) for x, y in xy]
+            xyz = [points_triangulate_cir((x - (w / 2), y), x_offset) for x, y in f_xy]
             x_offset += details['dps']
         else:
-            xyz = [points_triangulate((x - (w / 2), y), x_offset) for x, y in xy]
+            xyz = [points_triangulate((x - (w / 2), y), x_offset) for x, y in f_xy]
             x_offset -= x_offset_pic
         xyz = calc_normals(xyz)
         xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz if x >= 0]
@@ -297,26 +308,48 @@ def main():
 
 
 def tmp_pic():
-    scan_folder = "20220407103614"
+    global x_roi, y_roi
+    scan_folder = "20220412150853"
     path = getcwd() + "\\scans\\" + scan_folder + '\\'
-    pic = f"{path}right_{scan_folder}_0098.jpg"
+    pic = f"{path}right_0000.jpg"
+    color = f"{path}color_0000.jpg"
 
     img = cv2.imread(pic)
+    col = cv2.imread(color)
+    img = cv2.subtract(img, col)
     h, w, c = img.shape
-    img = cv2.resize(img, (w//4, h//4), interpolation=cv2.INTER_LINEAR_EXACT)
 
+    img = cv2.resize(img, (w//6, h//6), interpolation=cv2.INTER_LINEAR_EXACT)
     h, w, c = img.shape
+
+    x_roi = (250, 450)
+    y_roi = (0, h)
 
     #img[:, :, 0] = np.zeros([img.shape[0], img.shape[1]])
-
-    xy = points_max_cols(img, threshold=(200, 255))
+    f_xy = list()
+    xy = points_max_cols(img, threshold=(100, 255))
 
     new = np.zeros((h, w, 3), np.uint8)
-    img[:, :, 2] = np.zeros([img.shape[0], img.shape[1]])
+    new_f = np.zeros((h, w, 3), np.uint8)
+    #img[:, :, 2] = np.zeros([img.shape[0], img.shape[1]])
 
+    print(w)
+
+    r = float(w) * 0.01
+
+    for i in range(2, len(xy)-2):
+        x0, _ = xy[i-2]
+        x1, _ = xy[i-1]
+        x2, _ = xy[i]
+        x3, _ = xy[i+1]
+        x4, _ = xy[i+2]
+        if abs(float(x0 + x1 + x3 + x4)/4.0 - x2) < r:
+            f_xy.append(xy[i])
+
+    for r in f_xy:
+        new_f[r[1], r[0], 2] = 255
     for r in xy:
         new[r[1], r[0], 2] = 255
-        img[r[1], r[0], 2] = 255
     #for b in range(0, 325):
     #    new[b, mid, 0] = 255
     for a in range(0, w, 50):
@@ -325,20 +358,17 @@ def tmp_pic():
             r = 2
         for b in range(0, h, r):
             new[b, a, 0] = 255
-            img[b, a, 0] = 255
+            new_f[b, a, 0] = 255
     for a in range(0, h, 50):
         r = 5
         if a % 100 == 0:
             r = 2
         for b in range(0, w, r):
             new[a, b, 0] = 255
-            img[a, b, 0] = 255
-    #new = cv2.resize(new, (w//4, h//4), interpolation=cv2.INTER_LINEAR_EXACT)
-    cv2.imshow("new", img)
-    cv2.waitKey()
+            new_f[a, b, 0] = 255
+    cv2.imshow("img", new_f)
     cv2.imshow("new", new)
     cv2.waitKey()
-    #cv2.imwrite(path+"small.jpg", img)
 
 
 def process_calibration_pics():
