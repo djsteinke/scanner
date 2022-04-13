@@ -20,7 +20,8 @@ class Calibration(object):
     def start(self):
         self.popup = ScanPopup(steps=10)
         self.popup.open()
-        os.makedirs(self.path)
+        if not os.path.isdir(self.path):
+            os.makedirs(self.path)
         self.calibrate()
 
     def step(self, val):
