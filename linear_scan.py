@@ -25,7 +25,8 @@ class LinearScan(object):
         else:
             ps = length/s*pitch
         self.per_step = ps
-        print(self.per_step)
+        self.pps = round(200.0 * 16.0 * ps)          # 200 full steps per rotation (motor), 16 micro-steps
+        print(self.pps)
         self.timestamp = strftime('%Y%m%d%H%M%S')
 
     def start(self):
@@ -42,34 +43,27 @@ class LinearScan(object):
             exit()
 
         self.path = os.path.join(self.wd, f"scans\\{self.timestamp}")  # create scans dir
-        os.makedirs(self.path)
+
+        if not os.path.isdir(self.path):
+            os.makedirs(self.path)
         self.save_details()
 
-        motor_steps = 200 * 2 * self.per_step       # 200 full steps per rotation (motor), 2 micro-steps
-
-        if not self.ll:
-            self.arduino.send_msg("L21")     # Turn ON right laser
-            self._lasers[1] = True
-
-        for i in range(0, self.steps):
+        for i in range(1, self.steps+1):
             if self.ll:
-                if not self._lasers[0]:
+                if self.rl or self.color:
                     self.arduino.send_msg("L11")     # Turn ON left laser
-                    self._lasers[0] = True
                 self.android.take_picture(f'%s\\left_%04d.jpg' % (self.path, i))
-                self.arduino.send_msg("L10")     # Turn OFF left laser
-                self._lasers[0] = False
+                if self.rl or self.color:
+                    self.arduino.send_msg("L10")     # Turn OFF left laser
             if self.rl:
-                if not self._lasers[1]:
+                if self.ll or self.color:
                     self.arduino.send_msg("L21")     # Turn ON right laser
-                    self._lasers[1] = True
-                self.android.take_picture_tmp(f'%s\\right_%04d.jpg' % (self.path, i))
+                self.android.take_picture(f'%s\\right_%04d.jpg' % (self.path, i))
                 if self.ll or self.color:
                     self.arduino.send_msg("L20")     # Turn OFF right laser
-                    self._lasers[1] = False
             if self.color:
-                self.android.take_picture_tmp(f'%s\\color_%04d.jpg' % (self.path, i))
-            self.arduino.send_msg(f"STEP:{motor_steps}:CW")      # turn platform
+                self.android.take_picture(f'%s\\color_%04d.jpg' % (self.path, i))
+            self.arduino.send_msg(f"STEP:{self.pps}:CW")      # turn platform
             if self._step_callback is not None:
                 self._step_callback(i+1)
 
@@ -88,7 +82,7 @@ class LinearScan(object):
                    "rl": self.rl,
                    "color": self.color,
                    "type": "linear",
-                   "dps": '%0.2f' % distance}
+                   "dps": round(distance, 2)}
         print(details)
         d_path = self.path + "\\details.json"
         f = open(d_path, 'w')

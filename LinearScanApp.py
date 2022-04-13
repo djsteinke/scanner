@@ -6,7 +6,8 @@ from arduino import Arduino
 from collapsible_pane import CollapsiblePane
 from linear_scan import LinearScan
 from subprocess import run
-from os import getcwd
+from os import getcwd, makedirs
+from os.path import isdir
 from scan_popup import ScanPopup
 from hdpitkinter import HdpiTk
 
@@ -72,13 +73,14 @@ def connect():
 
 
 def connect_android():
-    global popup
+    global popup, android
     in_progress("Connecting...", False)
     adb(True)
     host = "%s.%s.%s.%s" % (host_value1.get('1.0', 'end-1c'), host_value2.get('1.0', 'end-1c'),
                             host_value3.get('1.0', 'end-1c'), host_value4.get('1.0', 'end-1c'))
     port = int(port_value.get("1.0", 'end-1c'))
-    android.connect_tmp(host=host, port=port, callback=in_progress)
+    android = Android(host=host, port=port, cb=in_progress)
+    Timer(0.1, android.connect).start()
 
 
 def scan_clicked():
@@ -92,10 +94,16 @@ def scan_clicked():
     rl = use_right_laser.get() == 1
     color = use_color.get() == 1
     metric = use_metric.get() == 1
-    print(ll, rl)
     scan = LinearScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step, pitch=pitch,
                       length=length, rl=rl, ll=ll, metric=metric, color=color)
     Timer(0.1, scan.start).start()
+
+
+def calibration_clicked():
+    d = getcwd() + "\\calibration"
+    if not isdir(d):
+        makedirs(d)
+    android.take_picture(d + "\\calibration_0000.jpg")
 
 
 def step(s):
@@ -224,7 +232,7 @@ if __name__ == '__main__':
     rpm.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     use_left_laser = IntVar()
     use_right_laser = IntVar(value=1)
-    use_color = IntVar()
+    use_color = IntVar(value=1)
     mn_row += 1
     label = Label(mn, text="Left Laser:")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
@@ -240,6 +248,7 @@ if __name__ == '__main__':
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     color_cb = Checkbutton(mn, variable=use_color)
     color_cb.grid(column=1, row=mn_row, padx=(5, 0), sticky=W)
+    mn_row += 1
     fr = Frame(mn)
     mv_left_button = Button(fr, text="<-", command=move_left, width=5)
     mv_left_button.grid(column=0, row=0, pady=3)
@@ -248,7 +257,7 @@ if __name__ == '__main__':
     mv_turns.grid(column=1, row=0, padx=(10, 10))
     mv_right_button = Button(fr, text="->", command=move_right, width=5)
     mv_right_button.grid(column=2, row=0, pady=3)
-    fr.grid(column=0, columnspan=2)
+    fr.grid(column=0, columnspan=2, row=mn_row)
 
     mn_row += 1
     config_label = Label(mn, text="Laser Control", font=font_bold)
@@ -283,7 +292,7 @@ if __name__ == '__main__':
     host_value3.grid(column=4, row=0)
     Label(host_frame, text=".").grid(column=5, row=0)
     host_value4 = Text(host_frame, width=3, height=1)
-    host_value4.insert('1.0', '14')
+    host_value4.insert('1.0', '37')
     host_value4.grid(column=6, row=0, padx=(0, 10))
     host_frame.grid(column=1, row=mn_row, padx=(10, 10), pady=3, sticky=W)
 
@@ -291,7 +300,7 @@ if __name__ == '__main__':
     port_label = Label(mn, text="Port:")
     port_label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     port_value = Text(mn, width=5, height=1)
-    port_value.insert('1.0', '38817')
+    port_value.insert('1.0', '5555')
     port_value.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
     connect_android = Button(mn, text="Connect", command=connect_android, width=10)

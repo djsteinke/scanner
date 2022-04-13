@@ -36,7 +36,7 @@ class Calibration(object):
             dps = 180.0 / 360.0 / 10.0               # degrees / step, 180 degrees / 10 steps
             pps = round(200.0 * 16.0 * dps)          # 200 full steps per rotation (motor), 16 micro-steps
             for i in range(1, 12):
-                self.android.take_picture_tmp(f'%s/calibration_%04d.jpg' % (self.path, i))
+                self.android.take_picture(f'%s/calibration_%04d.jpg' % (self.path, i))
                 self.arduino.send_msg(f"STEP:{pps}:CCW")      # turn platform
                 if self.popup is not None:
                     self.step(i+1)

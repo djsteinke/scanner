@@ -76,7 +76,7 @@ class CircularScan(object):
                    "rl": self.rl,
                    "color": self.color,
                    "type": "circular",
-                   "dps": '%0.2f' % dps}
+                   "dps": round(dps, 2)}
         print(details)
         d_path = self.path + "\\details.json"
         f = open(d_path, 'w')

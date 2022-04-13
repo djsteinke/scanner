@@ -254,7 +254,7 @@ def points_process_images(images, color=None):
             x_offset -= x_offset_pic
         # xyz = calc_normals(xyz)
         # xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz if x >= 0]
-        xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz]
+        xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
         points.extend(xyz)
 
     return points
