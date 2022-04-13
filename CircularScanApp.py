@@ -102,7 +102,7 @@ def scan_clicked():
 
 def calibration_clicked():
     d = getcwd() + "\\calibration"
-    makedirs(d)
+    # makedirs(d)
     #android.take_picture(d + "\\calibration.jpg")
     calibration = Calibration(arduino=arduino, android=android, path=d)
     Timer(0.1, calibration.start).start()
