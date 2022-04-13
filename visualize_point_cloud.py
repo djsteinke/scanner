@@ -23,7 +23,7 @@ def temp():
 
 def main():
     input_path = getcwd()
-    dataname = "20220410105543"
+    dataname = "20220412140909"
     #dataname = "20220406081736"
     path = input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyzrgb"
     pathXYZ = input_path + '\\scans\\' + dataname + '\\' + "xyz.xyz"
@@ -57,5 +57,5 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
-    temp()
+    main()
+    #temp()
