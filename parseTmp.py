@@ -49,6 +49,7 @@ def points_triangulate_cir(points, a):
     px, py = points
     cam_angle = math.radians(cam_degree)
     angle = math.radians(a)
+    #angle = (a/360.0)*(2.0*math.pi)
 
     radius = px / math.sin(cam_angle)
 
@@ -60,7 +61,7 @@ def points_triangulate_cir(points, a):
     ]
 
 
-def points_max_cols(img, threshold=(200, 255)):
+def points_max_cols(img, threshold=(220, 255)):
     """
     Read maximum pixel value in one color channel for each row
     """
@@ -226,7 +227,7 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
     x_offset = 0.0
     # images = images[40:41]
     for i, path in enumerate(images):
-        print("II: %03d/%03d processing %s" % (i, len(images), path))
+        print("II: %03d/%03d processing %s" % (i+1, len(images), path))
         img = cv2.imread(path)
         h, w, c = img.shape
         h_tmp = int(h/ratio)
@@ -234,6 +235,7 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
         img = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LINEAR_EXACT)
         h, w, c = img.shape
 
+        xy = points_max_cols(img, threshold=(235, 255))
         xy = points_max_cols(img)
         f_xy = list()
         r = float(w) * 0.01
@@ -248,7 +250,7 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
 
         if details['type'] == "circular":
             xyz = [points_triangulate_cir((x - (w / 2), y), x_offset) for x, y in f_xy]
-            x_offset += details['dps']
+            x_offset -= details['dps']
         else:
             xyz = [points_triangulate((x - (w / 2), y), x_offset) for x, y in f_xy]
             x_offset -= x_offset_pic
@@ -350,6 +352,7 @@ def tmp_pic():
         new_f[r[1], r[0], 2] = 255
     for r in xy:
         new[r[1], r[0], 2] = 255
+        img[r[1], r[0], 2] = 255
     #for b in range(0, 325):
     #    new[b, mid, 0] = 255
     for a in range(0, w, 50):
