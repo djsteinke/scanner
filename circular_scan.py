@@ -1,6 +1,7 @@
 import os
 from time import strftime
 import json
+import shutil
 
 
 class CircularScan(object):
@@ -16,11 +17,11 @@ class CircularScan(object):
         self.color = color
         self._callback = c
         self._step_callback = sc
-        self._lasers = [False, False]       # left/right
         self.path = None
         self.degrees = degrees
-        self.per_step = 360 / degrees / self.steps
-        print(self.per_step)
+        dps = float(degrees) / 360.0 / float(self.steps)
+        self.pps = round(200.0 * 16.0 * dps)          # 200 full steps per rotation (motor), 16 micro-steps
+        print(self.pps)
         self.timestamp = strftime('%Y%m%d%H%M%S')
 
     def start(self):
@@ -40,31 +41,26 @@ class CircularScan(object):
         os.makedirs(self.path)
         self.save_details()
 
-        motor_steps = int(200 * 16 * self.per_step)       # 200 full steps per rotation (motor), 2 micro-steps
+        calib_dir = self.wd + "\\scans\\calibration"
+        if os.path.isdir(calib_dir):
+            shutil.copytree(calib_dir, self.path)
 
-        if not self.ll:
-            self.arduino.send_msg("L21")     # Turn ON right laser
-            self._lasers[1] = True
-
-        for i in range(0, self.steps):
+        for i in range(1, self.steps+1):
             if self.ll:
-                if not self._lasers[0]:
+                if self.rl or self.color:
                     self.arduino.send_msg("L11")     # Turn ON left laser
-                    self._lasers[0] = True
                 self.android.take_picture(f'%s\\left_%04d.jpg' % (self.path, i))
-                self.arduino.send_msg("L10")     # Turn OFF left laser
-                self._lasers[0] = False
+                if self.rl or self.color:
+                    self.arduino.send_msg("L10")     # Turn OFF left laser
             if self.rl:
-                if not self._lasers[1]:
+                if self.ll or self.color:
                     self.arduino.send_msg("L21")     # Turn ON right laser
-                    self._lasers[1] = True
                 self.android.take_picture(f'%s\\right_%04d.jpg' % (self.path, i))
                 if self.ll or self.color:
                     self.arduino.send_msg("L20")     # Turn OFF right laser
-                    self._lasers[1] = False
             if self.color:
                 self.android.take_picture(f'%s\\color_%04d.jpg' % (self.path, i))
-            self.arduino.send_msg(f"STEP:{motor_steps}:CW")      # turn platform
+            self.arduino.send_msg(f"STEP:{self.pps}:CW")      # turn platform
             if self._step_callback is not None:
                 self._step_callback(i+1)
 
@@ -73,9 +69,7 @@ class CircularScan(object):
             self._callback()
 
     def save_details(self):
-        dps = int(200.0 * 16.0 * self.per_step)
-        print(dps)
-        dps = 200.0 * 16.0 / dps
+        dps = self.pps / (200.0 * 16.0) * 360.0
         details = {"date": self.timestamp,
                    "steps": self.steps,
                    "ll": self.ll,

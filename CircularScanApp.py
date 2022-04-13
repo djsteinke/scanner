@@ -103,9 +103,9 @@ def scan_clicked():
 def calibration_clicked():
     d = getcwd() + "\\calibration"
     makedirs(d)
-    android.take_picture(d + "\\calibration.jpg")
-    #calibration = Calibration(arduino=arduino, android=android, path=d)
-    #Timer(0.1, calibration.start).start()
+    #android.take_picture(d + "\\calibration.jpg")
+    calibration = Calibration(arduino=arduino, android=android, path=d)
+    Timer(0.1, calibration.start).start()
 
 
 def step(s):
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     rpm.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     use_left_laser = IntVar()
     use_right_laser = IntVar(value=1)
-    use_color = IntVar()
+    use_color = IntVar(value=1)
     mn_row += 1
     label = Label(mn, text="Left Laser:")
     label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)

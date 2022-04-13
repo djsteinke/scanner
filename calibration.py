@@ -30,12 +30,13 @@ class Calibration(object):
         if self.linear:
             tmp = 1
         else:
-            self.arduino.send_msg("L10")     # Turn OFF both lasers
+            self.arduino.send_msg("L10")            # Turn OFF both lasers
             self.arduino.send_msg("L20")
-            pulses = 20        # 1/2 micro steps, 18 deg/pic
-            for i in range(0, 11):
+            dps = 180.0 / 360.0 / 10.0               # degrees / step, 180 degrees / 10 steps
+            pps = round(200.0 * 16.0 * dps)          # 200 full steps per rotation (motor), 16 micro-steps
+            for i in range(1, 12):
                 self.android.take_picture_tmp(f'%s/calibration_%04d.jpg' % (self.path, i))
-                self.arduino.send_msg(f"STEP:{pulses}:CW")      # turn platform
+                self.arduino.send_msg(f"STEP:{pps}:CW")      # turn platform
                 if self.popup is not None:
                     self.step(i+1)
             if self._callback is not None:
