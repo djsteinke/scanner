@@ -235,12 +235,12 @@ def points_process_images(images, color=None):
             c = cv2.imread(color[i])
             img = cv2.subtract(img, c)
             tmin = 100
-        h, w, c = img.shape
+        h, w, _ = img.shape
         if ratio > 1:
             h_tmp = int(h/ratio)
             w_tmp = int(w/ratio)
             img = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
-            h, w, c = img.shape
+            h, w, _ = img.shape
 
         xy = points_max_cols(img, threshold=(tmin, 255))
         # xy = points_max_cols(img)
@@ -316,7 +316,7 @@ def main():
 
     output_asc_pointset(filename, right, 'xyzcn')
 
-    subprocess.run(['python', '-f', f'{scan_folder}.xyz', '-p', path])
+    subprocess.run(['python', '-f', f'{scan_folder}.xyz', '-p', path], shell=True)
 
 
 def tmp_pic():
@@ -331,7 +331,7 @@ def tmp_pic():
     img = cv2.subtract(img, col)
     h, w, c = img.shape
 
-    img = cv2.resize(img, (w//6, h//6), interpolation=cv2.INTER_LINEAR_EXACT)
+    img = cv2.resize(img, (w//6, h//6), interpolation=cv2.INTER_AREA)
     h, w, c = img.shape
 
     x_roi = (250, 450)
