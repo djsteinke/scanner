@@ -55,7 +55,7 @@ def points_triangulate_cir(points, a, color=None):
 
     bgr = [0, 0, 0]
     if color is not None:
-        bgr = color[py, px]
+        bgr = color[round(py), round(px)]
 
     return [
         radius * math.cos(angle),
