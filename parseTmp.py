@@ -337,7 +337,6 @@ def tmp_pic():
     x_roi = (250, 450)
     y_roi = (0, h)
 
-    #img[:, :, 0] = np.zeros([img.shape[0], img.shape[1]])
     f_xy = list()
     xy = points_max_cols(img, threshold=(100, 255))
 
