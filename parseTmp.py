@@ -248,7 +248,7 @@ def points_process_images(images, color=None):
 
         if details['type'] == "circular":
             xyz = [points_triangulate_cir((x - (w / 2), y), x_offset, color=c) for x, y in xy]
-            x_offset -= details['dps']
+            x_offset -= float(details['dps'])
         else:
             xyz = [points_triangulate((x - (w / 2), y), x_offset, color=c) for x, y in xy]
             x_offset -= x_offset_pic
