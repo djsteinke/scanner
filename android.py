@@ -12,6 +12,7 @@ class Android(object):
         self._callback = cb
         self.d = f'{host}:{port}'
         self.connected = False
+        self.last_filename = ""
 
     def connect(self):
         res = run(['adb', 'connect', self.d], capture_output=True)
@@ -43,10 +44,10 @@ class Android(object):
                       capture_output=True)
             filename = res.stdout.decode().replace('\r', '').replace('\n', '')
             print(filename)
-            if '.pending' not in filename:
+            if '.pending' not in filename and filename != self.last_filename:
                 break
             sleep(1)
-        print(path)
+        self.last_filename = filename
         res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', path],
                   capture_output=True)
         print_res(res)
