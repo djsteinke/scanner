@@ -1,4 +1,4 @@
-
+import subprocess
 import glob
 from os import getcwd
 import math
@@ -11,7 +11,7 @@ from json import load
 count = 0
 
 
-def points_triangulate(points, y_offset):
+def points_triangulate(points, y_offset, color=None):
 
     cam_degree = 30
     x, y = points
@@ -27,7 +27,7 @@ def points_triangulate(points, y_offset):
     ]
 
 
-def points_triangulate_ls(points, y_offset):
+def points_triangulate_ls(points, y_offset, color=None):
 
     cam_degree = 30
     x, y = points
@@ -44,7 +44,7 @@ def points_triangulate_ls(points, y_offset):
     ]
 
 
-def points_triangulate_cir(points, a):
+def points_triangulate_cir(points, a, color=None):
     cam_degree = 30
     px, py = points
     cam_angle = math.radians(cam_degree)
@@ -53,10 +53,15 @@ def points_triangulate_cir(points, a):
 
     radius = px / math.sin(cam_angle)
 
+    bgr = [0, 0, 0]
+    if color is not None:
+        bgr = color[py, px]
+
     return [
         radius * math.cos(angle),
         radius * math.sin(angle),
         y_roi[1] - py * 1.00,
+        bgr[2], bgr[1], bgr[0],
         0.0, 0.0, 0.0
     ]
 
@@ -66,31 +71,29 @@ def points_max_cols(img, threshold=(220, 255)):
     Read maximum pixel value in one color channel for each row
     """
 
-    tmin, tmax = threshold
-    h, w, c = img.shape
+    t_min, _ = threshold
     xy = list()
 
     for i in range(y_roi[0], y_roi[1], 3):
         mx = 0
-        mv = [0, 0, 0]
-        mvTemp = 0
+        mv = 0
         for x in range(x_roi[0], x_roi[1], 3):
-            """
-            if img[i, x, 2] > mv[2]:
-                mv = img[i, x]
-                mx = x
-            """
-            avg = sum(img[i, x])*1.0
-            if avg > mvTemp and avg >= threshold[0]:
-                mvTemp = avg
-                mx = x
+            if t_min > 150:
+                if img[i, x, 2] > mv and img[i, x, 2] >= t_min:
+                    mv = img[i, x]
+                    mx = x
+            else:
+                avg = sum(img[i, x])*1.0
+                if avg > mv and avg >= t_min:
+                    mv = avg
+                    mx = x
 
-        #valid = i < m*mx + b
-        valid = True
-        if mvTemp > 0:
+        # valid = i < m*mx + b
+        # valid = True
+        if mv > 0:
             xy.append((mx, i))
-        #if mv[2] > tmin and valid:
-        #    xy.append((mx, i))
+        # if mv[2] > tmin and valid:
+        #     xy.append((mx, i))
 
     return xy
 
@@ -213,10 +216,7 @@ def get_roi(path):
     return [int(xroi[0] / ratio), int(xroi[1] / ratio)], [int(yroi[0] / ratio), int(yroi[1] / ratio)]
 
 
-def points_process_images(images, threshold_min=200, threshold_max=255):
-    """
-    extract 3d pixels and colors from either left or right set of images
-    """
+def points_process_images(images, color=None):
     global x_roi, y_roi
     turns = 1
     per_turn = 2
@@ -229,53 +229,62 @@ def points_process_images(images, threshold_min=200, threshold_max=255):
     for i, path in enumerate(images):
         print("II: %03d/%03d processing %s" % (i+1, len(images), path))
         img = cv2.imread(path)
+        tmin = 200
+        c = None
+        if color is not None:
+            c = cv2.imread(color[i])
+            img = cv2.subtract(img, c)
+            tmin = 100
         h, w, c = img.shape
-        h_tmp = int(h/ratio)
-        w_tmp = int(w/ratio)
-        img = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LINEAR_EXACT)
-        h, w, c = img.shape
+        if ratio > 1:
+            h_tmp = int(h/ratio)
+            w_tmp = int(w/ratio)
+            img = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
+            h, w, c = img.shape
 
-        xy = points_max_cols(img, threshold=(235, 255))
-        xy = points_max_cols(img)
-        f_xy = list()
-        r = float(w) * 0.01
-        for v in range(2, len(xy) - 2):
-            x0, _ = xy[i - 2]
-            x1, _ = xy[i - 1]
-            x2, _ = xy[i]
-            x3, _ = xy[i + 1]
-            x4, _ = xy[i + 2]
-            if abs(float(x0 + x1 + x3 + x4) / 4.0 - x2) < r:
-                f_xy.append(xy[i])
+        xy = points_max_cols(img, threshold=(tmin, 255))
+        # xy = points_max_cols(img)
+        xy = remove_noise(xy, w)
 
         if details['type'] == "circular":
-            xyz = [points_triangulate_cir((x - (w / 2), y), x_offset) for x, y in f_xy]
+            xyz = [points_triangulate_cir((x - (w / 2), y), x_offset, color=c) for x, y in xy]
             x_offset -= details['dps']
         else:
-            xyz = [points_triangulate((x - (w / 2), y), x_offset) for x, y in f_xy]
+            xyz = [points_triangulate((x - (w / 2), y), x_offset, color=c) for x, y in xy]
             x_offset -= x_offset_pic
-        xyz = calc_normals(xyz)
-        xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz if x >= 0]
+        # xyz = calc_normals(xyz)
+        # xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz if x >= 0]
+        xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz]
         points.extend(xyz)
 
     return points
 
 
-def remove_noise(points):
-    tmp = 1
+def remove_noise(xy, w):
+    f_xy = list()
+    r = float(w) * 0.01
+    for v in range(2, len(xy) - 2):
+        x0, _ = xy[v - 2]
+        x1, _ = xy[v - 1]
+        x2, _ = xy[v]
+        x3, _ = xy[v + 1]
+        x4, _ = xy[v + 2]
+        if abs(float(x0 + x1 + x3 + x4) / 4.0 - x2) < r:
+            f_xy.append(xy[v])
+    return f_xy
 
 
-def parse_images(images_right):
+def parse_images(images, color=None):
 
-    points_right = points_process_images(images_right)
+    points = points_process_images(images, color=color)
 
-    return points_right
+    return points
 
 
 def main():
     global details
     right = []
-    color = []
+    color = None
     scan_folder = "20220407103614"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
@@ -298,15 +307,16 @@ def main():
 
     print("I: processing %d steps" % steps)
 
-    right = parse_images(right)
+    right = parse_images(right, color=color)
 
     #right = remove_noise(right)
     #xyz = calc_normals(xyz)
 
     print("I: Writing pointcloud to %s" % filename)
 
-    # TODO write XYZ file
-    output_asc_pointset(filename, right, 'xyzn')
+    output_asc_pointset(filename, right, 'xyzcn')
+
+    subprocess.run(['python', '-f', f'{scan_folder}.xyz', '-p', path])
 
 
 def tmp_pic():
