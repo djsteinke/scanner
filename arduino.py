@@ -1,4 +1,5 @@
 import serial
+from time import sleep
 
 
 class Arduino(object):
@@ -14,20 +15,33 @@ class Arduino(object):
 
     def open(self):
         try:
-            self.serial = serial.Serial(self._com, self._speed, timeout=0.2)
+            self.serial = serial.Serial(self._com, 9600, timeout=0.2)
         except serial.SerialException:
             print('Arduino not found.')
             raise Exception('Failed to connect')
 
+        self.connected = True
+        """
         # Wait for connect from arduino
         if self.serial is not None:
+            cnt = 0
             while not self.connected:
-                data = self.serial.readline().decode()
-                if len(data) > 3:
-                    print(f'rawData [{data}]')
-                if data == "setup":
-                    self.connected = True
+                data = self.serial.readline()
+                if len(data) > 0:
+                    s = data.decode().rstrip()
+                    print(f'rawData [{s}]')
+                    if data == "setup" or data == 'ping':
+                        self.connected = True
+                if cnt > 10:
+                    r = self.serial.write(bytes('message', encoding='utf-8'))
+                    print(f'written [{r}]')
+                    self.serial.flush()
+                    sleep(0.1)
+                    cnt = 0
+                cnt += 1
+                sleep(0.1)
             print("connected")
+        """
 
     def close(self):
         if self.serial is not None:
@@ -39,17 +53,18 @@ class Arduino(object):
         return str(self._msg_id)
 
     def send_msg(self, msg_in):
-        msg = self.get_msg_id() + ":" + msg_in
+        msg = self.get_msg_id() + ":" + msg_in + ":end"
         if self.connected:
-            print(f"Sending message[{msg}]")
+            print(f"out[{msg}]")
             self._sending = True
             self.serial.write(bytes(msg, encoding="utf8"))
             while True:
-                data = self.serial.readline().decode()
-                if len(data) > 0:
-                    print(f'rawData[{data}]')
+                data = self.serial.readline()
+                s_data = data.decode().rstrip()
+                if len(s_data) > 0:
+                    print(f'in[{data}]')
 
-                datas = data.split(":")
+                datas = s_data.split(":")
                 if len(datas) > 0 and str(self._msg_id) == datas[0]:
                     if len(datas) > 1:
                         self.response = datas[1]
