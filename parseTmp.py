@@ -148,18 +148,30 @@ def get_normal(xyz, i, i_off):
     return nx, nz
 
 
-def get_normal_b(xyz, i, i_off, r):
+def get_normal_b(xyz, i, i_off, r, a=0):
+    angle = math.radians(a)
+    c = math.cos(angle)
+    if c == 0:
+        c = 1
+    s = math.sin(angle)
+
+    """
+        radius * math.cos(angle),
+        radius * math.sin(angle),
+        y_roi[1] - py * 1.00,
+    """
+
     z0 = xyz[i][2]
     z1 = xyz[i + i_off][2]
     xT = 0
     for a in range(i-r, i+r+1):
         xT += xyz[a][0]
-    x0 = xT/5
+    x0 = xT/5/c
     xT = 0
     for a in range(i+i_off-r, i+i_off+r+1):
         xT += xyz[a][0]
-    x1 = xT/5
-    # print(x0, x1)
+    x1 = xT/5/c
+
     if x1 - x0 == 0:
         nx = 0.0
         if z1 - z0 >= 0:
@@ -169,27 +181,32 @@ def get_normal_b(xyz, i, i_off, r):
     else:
         if z1 - z0 == 0:
             nz = 0.0
-            nx = 0.2
+            if x1 - x0 >= 0:
+                nx = 0.2
+            else:
+                nx = -0.2
         else:
             m = (z1 - z0) / (x1 - x0)
             x = math.sqrt(0.04 / (1 + 1 / math.pow(m, 2))) + x0
             nz = -1 / m * (x - x0)
             nx = x - x0
 
-    return nx, nz
+    nx = nx * c
+    ny = nx * s
+    return nx, ny, nz
 
 
-def calc_normals(xyz):
+def calc_normals(xyz, a):
     global count
     length = len(xyz)
 
     i_off = 5
     r = 4
     for i in range(r+1, length-i_off-r, 1):
-        nx, nz = get_normal_b(xyz, i, i_off, r)
+        nx, ny, nz = get_normal_b(xyz, i, i_off, r, a)
 
         xyz[i][3] = nx
-        xyz[i][4] = 0.0
+        xyz[i][4] = ny
         xyz[i][5] = nz
     return xyz
 
@@ -271,11 +288,11 @@ def points_process_images(images, color=None):
 
         if details['type'] == "circular":
             xyz = [points_triangulate_cir((x - (w / 2), y), x_offset, color=c) for x, y in xy]
+            xyz = calc_normals(xyz, x_offset)
             x_offset -= float(details['dps'])
         else:
             xyz = [points_triangulate((x - (w / 2), y), x_offset, color=c) for x, y in xy]
             x_offset -= x_offset_pic
-        # xyz = calc_normals(xyz)
         # xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz if x >= 0]
         xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
         points.extend(xyz)
@@ -285,7 +302,7 @@ def points_process_images(images, color=None):
 
 def remove_noise(xy, w):
     f_xy = list()
-    r = float(w) * 0.02
+    r = float(w) * 0.03
     for v in range(2, len(xy) - 2):
         x0, _ = xy[v - 2]
         x1, _ = xy[v - 1]
