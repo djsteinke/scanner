@@ -285,7 +285,7 @@ def main():
     global details
     right = []
     color = None
-    scan_folder = "20220407103614"
+    scan_folder = "20220413130320"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
 
@@ -316,15 +316,15 @@ def main():
 
     output_asc_pointset(filename, right, 'xyzcn')
 
-    subprocess.run(['python', '-f', f'{scan_folder}.xyz', '-p', path], shell=True)
+    #subprocess.run(['python', '-f', f'{scan_folder}.xyz', '-p', path], shell=True)
 
 
 def tmp_pic():
     global x_roi, y_roi
-    scan_folder = "20220412150853"
+    scan_folder = "20220413130320"
     path = getcwd() + "\\scans\\" + scan_folder + '\\'
-    pic = f"{path}right_0000.jpg"
-    color = f"{path}color_0000.jpg"
+    pic = f"{path}color_0041.jpg"
+    color = f"{path}right_0042.jpg"
 
     img = cv2.imread(pic)
     col = cv2.imread(color)
@@ -333,6 +333,8 @@ def tmp_pic():
 
     img = cv2.resize(img, (w//6, h//6), interpolation=cv2.INTER_AREA)
     h, w, c = img.shape
+
+    cv2.imshow("minus", img)
 
     x_roi = (250, 450)
     y_roi = (0, h)
@@ -427,6 +429,6 @@ if __name__ == "__main__":
     y_roi = [0, 0]
     scaler = 10.1 #(px/mm)
     ratio = 1
-    main()
+    #main()
     #process_calibration_pics()
-    #tmp_pic()
+    tmp_pic()

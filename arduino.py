@@ -3,7 +3,7 @@ from time import sleep
 
 
 class Arduino(object):
-    def __init__(self, com="COM4", speed="9600"):
+    def __init__(self, com="COM3", speed="9600"):
         self.serial = None
         self._connected = False
         self._sending = False
@@ -53,7 +53,7 @@ class Arduino(object):
         return str(self._msg_id)
 
     def send_msg(self, msg_in):
-        msg = self.get_msg_id() + ":" + msg_in + ":end"
+        msg = self.get_msg_id() + ":" + msg_in + ":0"
         if self.connected:
             print(f"out[{msg}]")
             self._sending = True
@@ -62,7 +62,8 @@ class Arduino(object):
                 data = self.serial.readline()
                 s_data = data.decode().rstrip()
                 if len(s_data) > 0:
-                    print(f'in[{data}]')
+                    s_data = s_data.rstrip(':0')
+                    print(f'in[{s_data}]')
 
                 datas = s_data.split(":")
                 if len(datas) > 0 and str(self._msg_id) == datas[0]:

@@ -12,8 +12,8 @@ from calibration import Calibration
 from hdpitkinter import HdpiTk
 
 cam_id = 0
-arduino = Arduino(speed=38400)
-arduino_com = "COM4"
+arduino = Arduino(speed=9600)
+arduino_com = "COM3"
 
 scanning = False
 connected = False

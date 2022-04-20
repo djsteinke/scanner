@@ -12,8 +12,8 @@ from scan_popup import ScanPopup
 from hdpitkinter import HdpiTk
 
 cam_id = 0
-arduino = Arduino(speed=38400)
-arduino_com = "COM4"
+arduino_com = "COM3"
+arduino = Arduino(com='COM3', speed=9600)
 
 scanning = False
 connected = False

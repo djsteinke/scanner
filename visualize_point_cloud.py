@@ -27,26 +27,42 @@ def main():
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220407103614"
-        pcd = o3d.io.read_point_cloud(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", format='xyzn')
+        dataname = "20220413130320"
+        xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
+        points = []
+
+        for line in xyz:
+            x, y, z, r, g, b, nx, ny, nz = line.split()
+            r = str(round(float(r)/255.0, 2))
+            g = str(round(float(g)/255.0, 2))
+            b = str(round(float(b)/255.0, 2))
+            #print(x, y, z, r, g, b)
+            points.append([x, y, z])
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points)
+        # pcd = o3d.io.read_point_cloud(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", format='xyzn')
     else:
         xyz = open(path + '\\' + file, mode="r")
         points = []
         for line in xyz:
             x, y, z, r, g, b = line.split()
             points.append([x, y, z, r, g, b])
-            pcd = o3d.geometry.PointCloud()
-            pcd.points = o3d.utility.Vector3dVector(points)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points)
     if pcd is None:
         print("PCD not created. Exiting")
         exit()
 
+    print(pcd)
+
     # surface reconstruction using Poisson reconstruction
-    mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd=pcd, depth=9)
+    #mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd=pcd, depth=9)
 
     # paint uniform color to better visualize, not mandatory
-    mesh.paint_uniform_color(np.array([0.7, 0.7, 0.7]))
-    o3d.visualization.draw_geometries([pcd, mesh], width=1280, height=720)
+    #mesh.paint_uniform_color(np.array([0.7, 0.7, 0.7]))
+
+    o3d.visualization.draw_geometries([pcd], width=1280, height=720)
+    #o3d.visualization.draw_geometries([pcd, mesh], width=1280, height=720)
 
 
 if __name__ == "__main__":
