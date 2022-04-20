@@ -1,5 +1,5 @@
 import os
-from time import strftime
+from time import strftime, sleep
 import json
 import shutil
 
@@ -45,24 +45,35 @@ class CircularScan(object):
         if os.path.isdir(calib_dir):
             shutil.copytree(calib_dir, self.path)
 
-        for i in range(1, self.steps+1):
+        for i in range(0, self.steps):
+            if self._step_callback is not None:
+                self._step_callback(i)
             if self.ll:
                 if self.rl or self.color:
                     self.arduino.send_msg("L11")     # Turn ON left laser
-                self.android.take_picture(f'%s\\left_%04d.jpg' % (self.path, i))
+                    sleep(0.2)
+                pic = 'left_%04d.jpg' % i
+                self.android.take_picture(f'%s\\%s' % (self.path, pic))
+                print(pic)
                 if self.rl or self.color:
                     self.arduino.send_msg("L10")     # Turn OFF left laser
+                    sleep(0.2)
             if self.rl:
                 if self.ll or self.color:
                     self.arduino.send_msg("L21")     # Turn ON right laser
-                self.android.take_picture(f'%s\\right_%04d.jpg' % (self.path, i))
+                    sleep(0.2)
+                pic = 'right_%04d.jpg' % i
+                self.android.take_picture(f'%s\\%s' % (self.path, pic))
+                print(pic)
                 if self.ll or self.color:
                     self.arduino.send_msg("L20")     # Turn OFF right laser
+                    sleep(0.2)
             if self.color:
-                self.android.take_picture(f'%s\\color_%04d.jpg' % (self.path, i))
+                pic = 'color_%04d.jpg' % i
+                self.android.take_picture(f'%s\\%s' % (self.path, pic))
+                print(pic)
             self.arduino.send_msg(f"STEP:{self.pps}:CW")      # turn platform
-            if self._step_callback is not None:
-                self._step_callback(i+1)
+            sleep(0.2)
 
         self.android.sync_media_service()
         if self._callback is not None:

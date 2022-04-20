@@ -14,15 +14,20 @@ count = 0
 def points_triangulate(points, y_offset, color=None):
 
     cam_degree = 30
-    x, y = points
+    px, py = points
     cam_angle = math.radians(cam_degree)
-    calc_x = x / math.tan(cam_angle)
-    calc_y = x - y_offset
+    calc_x = px / math.tan(cam_angle)
+    calc_y = px - y_offset
+
+    bgr = [0, 0, 0]
+    if color is not None:
+        bgr = color[round(py), round(px)]
 
     return [
         calc_x,
         calc_y,
-        y_roi[1]-y * 1.00,
+        y_roi[1]-py * 1.00,
+        bgr[2], bgr[1], bgr[0],
         0.0, 0.0, 0.0
     ]
 
@@ -66,6 +71,17 @@ def points_triangulate_cir(points, a, color=None):
     ]
 
 
+def red_val(in_val, t_min):
+    r = int(in_val[2])
+    g = int(in_val[1])
+    b = int(in_val[0])
+    v = 1.2
+    if r > t_min and r > g*v and r > b*v:
+        return r - (g+b)
+    else:
+        return 0
+
+
 def points_max_cols(img, threshold=(220, 255)):
     """
     Read maximum pixel value in one color channel for each row
@@ -79,9 +95,13 @@ def points_max_cols(img, threshold=(220, 255)):
         mv = 0
         for x in range(x_roi[0], x_roi[1], 3):
             if t_min > 150:
-                if img[i, x, 2] > mv and img[i, x, 2] >= t_min:
-                    mv = img[i, x]
+                v = red_val(img[i, x], t_min)
+                if v > mv:
+                    mv = v
                     mx = x
+                #if img[i, x, 2] > mv and img[i, x, 2] >= t_min:
+                #    mv = img[i, x, 2]
+                #    mx = x
             else:
                 avg = sum(img[i, x])*1.0
                 if avg > mv and avg >= t_min:
@@ -226,8 +246,11 @@ def points_process_images(images, color=None):
     x_offset_pic = x_offset_pic * scaler / ratio
     x_offset = 0.0
     # images = images[40:41]
+    s = details['steps']
     for i, path in enumerate(images):
-        print("II: %03d/%03d processing %s" % (i+1, len(images), path))
+        pic_num = path.split('right_')
+        pic_num = int(pic_num[1].split('.')[0])
+        print("II: %03d/%03d processing %s" % (pic_num, s, path))
         img = cv2.imread(path)
         tmin = 200
         c = None
@@ -283,9 +306,8 @@ def parse_images(images, color=None):
 
 def main():
     global details
-    right = []
-    color = None
-    scan_folder = "20220413130320"
+    color = []
+    scan_folder = "20220406081736"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
 
@@ -303,6 +325,9 @@ def main():
         color = glob.glob("%s/color*" % path.rstrip('/'))
         color.sort()
 
+    print(f'RIGHT[{len(right)}] COLOR[{len(color)}]')
+    if len(color) == 0:
+        color = None
     steps = details['steps']
 
     print("I: processing %d steps" % steps)
@@ -321,7 +346,7 @@ def main():
 
 def tmp_pic():
     global x_roi, y_roi
-    scan_folder = "20220413130320"
+    scan_folder = "20220406081736"
     path = getcwd() + "\\scans\\" + scan_folder + '\\'
     pic = f"{path}color_0041.jpg"
     color = f"{path}right_0042.jpg"
@@ -429,6 +454,6 @@ if __name__ == "__main__":
     y_roi = [0, 0]
     scaler = 10.1 #(px/mm)
     ratio = 1
-    #main()
+    main()
     #process_calibration_pics()
-    tmp_pic()
+    #tmp_pic()

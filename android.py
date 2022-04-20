@@ -5,6 +5,8 @@ from subprocess import run
 def print_res(res):
     if len(res.stderr.decode()) > 0:
         print(f'ANDROID ERROR: {res.stderr.decode()}')
+        return False
+    return True
 
 
 class Android(object):
@@ -37,24 +39,23 @@ class Android(object):
     def take_picture(self, path):
         res = run(['adb', '-s', self.d, 'shell', 'input', 'keyevent', 'KEYCODE_CAMERA'], capture_output=True)
         print_res(res)
-        print('picture taken')
         sleep(1)
         while True:
             res = run(['adb', '-s', self.d, 'shell', 'ls', '-Art', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
                       capture_output=True)
             filename = res.stdout.decode().replace('\r', '').replace('\n', '')
-            print(filename)
             if '.pending' not in filename and filename != self.last_filename:
                 break
-            sleep(1)
+            sleep(0.5)
         self.last_filename = filename
         res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', path],
                   capture_output=True)
         print_res(res)
-
+        sleep(0.5)
         res = run(['adb', '-s', self.d, 'shell', 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'],
                   capture_output=True)
         print_res(res)
+        print('picture taken', filename)
 
     def sync_media_service(self):
         run(['adb', '-s', self.d, 'am', 'broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE',
