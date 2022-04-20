@@ -66,7 +66,7 @@ def points_triangulate_cir(points, a, color=None):
         radius * math.cos(angle),
         radius * math.sin(angle),
         y_roi[1] - py * 1.00,
-        bgr[2], bgr[1], bgr[0],
+        255.0/(bgr[2]*1.0), 255.0/(bgr[1]*1.0), 255.0/(bgr[0]*1.0),
         0.0, 0.0, 0.0
     ]
 
@@ -285,7 +285,7 @@ def points_process_images(images, color=None):
 
 def remove_noise(xy, w):
     f_xy = list()
-    r = float(w) * 0.01
+    r = float(w) * 0.02
     for v in range(2, len(xy) - 2):
         x0, _ = xy[v - 2]
         x1, _ = xy[v - 1]
