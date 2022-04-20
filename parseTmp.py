@@ -66,7 +66,7 @@ def points_triangulate_cir(points, a, color=None):
         radius * math.cos(angle),
         radius * math.sin(angle),
         y_roi[1] - py * 1.00,
-        255.0/(bgr[2]*1.0), 255.0/(bgr[1]*1.0), 255.0/(bgr[0]*1.0),
+        (bgr[2]*1.0)/255.0, (bgr[1]*1.0)/255.0, (bgr[0]*1.0)/255.0,
         0.0, 0.0, 0.0
     ]
 
