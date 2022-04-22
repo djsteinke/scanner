@@ -105,14 +105,22 @@ def points_max_cols(img, threshold=(220, 255)):
     t_min, _ = threshold
     xy = list()
 
-    for i in range(y_roi[0], y_roi[1], int(scaler)):
+    y_step = int(scaler * float(details['dps']) / (ratio*1.0))
+
+    for i in range(y_roi[0], y_roi[1], y_step):
         mx = 0
         mv = 0
         for x in range(x_roi[0], x_roi[1], 1):
-            v = red_val(img[i, x], 60)
-            if v > mv:
-                mv = v
-                mx = x
+            if details['color']:
+                avg = sum(img[i, x])
+                if avg > mv and avg >= t_min:
+                    mv = avg
+                    mx = x
+            else:
+                v = red_val(img[i, x], 60)
+                if v > mv:
+                    mv = v
+                    mx = x
 
         # valid = i < m*mx + b
         # valid = True
@@ -280,7 +288,7 @@ def points_process_images(images, color=None):
         if color is not None:
             c = cv2.imread(color[i])
             img = cv2.subtract(img, c)
-            tmin = 75
+            tmin = 40
         h, w, _ = img.shape
         if ratio > 1:
             h_tmp = int(h/ratio)
@@ -335,7 +343,7 @@ def main():
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
 
-    details_path = f'{getcwd()}\\scans\\details.json'
+    details_path = f'{getcwd()}\\scans\\' + scan_folder + '\\details.json'
     f = open(details_path, 'r')
     details = load(f)
     print(details)
@@ -369,35 +377,38 @@ def main():
 
 
 def tmp_pic():
-    global x_roi, y_roi
-    scan_folder = "20220406081736"
+    global x_roi, y_roi, details, ratio
+    scan_folder = "20220422123148"
     path = getcwd() + "\\scans\\" + scan_folder + '\\'
-    pic = f"{path}color_0041.jpg"
-    color = f"{path}right_0042.jpg"
+    pic = f"{path}right_0087.jpg"
+    color = f"{path}color_0087.jpg"
+
+    details_path = f'{getcwd()}\\scans\\' + scan_folder + '\\details.json'
+    f = open(details_path, 'r')
+    details = load(f)
+    print(details)
 
     img = cv2.imread(pic)
     col = cv2.imread(color)
     img = cv2.subtract(img, col)
     h, w, c = img.shape
-
-    img = cv2.resize(img, (w//6, h//6), interpolation=cv2.INTER_AREA)
+    img = cv2.resize(img, (w // 6, h // 6), interpolation=cv2.INTER_AREA)
     h, w, c = img.shape
 
-    cv2.imshow("minus", img)
+    ratio = 6
+    x_roi, y_roi = get_roi(pic)
 
-    x_roi = (250, 450)
-    y_roi = (0, h)
 
     f_xy = list()
-    xy = points_max_cols(img, threshold=(100, 255))
+    xy = points_max_cols(img, threshold=(60, 255))
 
     new = np.zeros((h, w, 3), np.uint8)
     new_f = np.zeros((h, w, 3), np.uint8)
     #img[:, :, 2] = np.zeros([img.shape[0], img.shape[1]])
 
-    print(w)
+    print(x_roi, y_roi)
 
-    r = float(w) * 0.01
+    r = float(w) * 0.02
 
     for i in range(2, len(xy)-2):
         x0, _ = xy[i-2]
@@ -429,6 +440,8 @@ def tmp_pic():
         for b in range(0, w, r):
             new[a, b, 0] = 255
             new_f[a, b, 0] = 255
+
+    cv2.imshow("minus", img)
     cv2.imshow("img", new_f)
     cv2.imshow("new", new)
     cv2.waitKey()
@@ -542,7 +555,7 @@ if __name__ == "__main__":
     #scaler = 10.1 #(px/mm)
     scaler = 229.46/20.0
     ratio = 1
-    main()
+    #main()
     #linear_calibration_process()
     #process_calibration_pics()
-    #tmp_pic()
+    tmp_pic()
