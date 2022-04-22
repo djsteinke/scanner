@@ -65,6 +65,7 @@ class Arduino(object):
             self.serial.write(bytes(str(m), encoding='utf-8'))
             print('sent', a, d, v)
 
+            cnt = 0
             while True:
                 data = self.serial.readline()
                 if data:
@@ -76,6 +77,10 @@ class Arduino(object):
                     if found:
                         print(msg_id, success)
                         break
+                if cnt >= 20:
+                    self.serial.write(bytes(str(m), encoding='utf-8'))
+                    cnt = 0
+                cnt += 1
 
     def send_msg(self, msg_in):
         if self.connected:
