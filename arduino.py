@@ -63,6 +63,7 @@ class Arduino(object):
             m += v                          # Value
 
             self.serial.write(bytes(str(m), encoding='utf-8'))
+            print(f'sent {str(m)}')
 
             while True:
                 data = self.serial.readline()

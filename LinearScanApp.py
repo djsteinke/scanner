@@ -179,7 +179,7 @@ def arduino_connect():
         arduino_con_bt['relief'] = 'sunken'
         r = rpm.get('1.0', 'end-1c')
         #arduino.send_msg(f'RPM:{r}')
-        arduino.send_msg_new(5, 0, r)
+        arduino.send_msg_new(5, 0, int(r))
     else:
         arduino_con_bt.config(bg="SystemButtonFace")
         arduino_con_bt['relief'] = 'raised'
