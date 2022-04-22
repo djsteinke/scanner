@@ -46,8 +46,6 @@ class CircularScan(object):
             shutil.copytree(calib_dir, self.path)
 
         for i in range(0, self.steps):
-            if self._step_callback is not None:
-                self._step_callback(i)
             if self.ll:
                 if self.rl or self.color:
                     self.arduino.send_msg("L11")     # Turn ON left laser
@@ -57,7 +55,6 @@ class CircularScan(object):
                 print(pic)
                 if self.rl or self.color:
                     self.arduino.send_msg("L10")     # Turn OFF left laser
-                    sleep(0.2)
             if self.rl:
                 if self.ll or self.color:
                     self.arduino.send_msg("L21")     # Turn ON right laser
@@ -74,6 +71,8 @@ class CircularScan(object):
                 print(pic)
             self.arduino.send_msg(f"STEP:{self.pps}:CW")      # turn platform
             sleep(0.2)
+            if self._step_callback is not None:
+                self._step_callback(i+1)
 
         self.android.sync_media_service()
         if self._callback is not None:

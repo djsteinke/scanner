@@ -53,24 +53,27 @@ class Arduino(object):
         return str(self._msg_id)
 
     def send_msg(self, msg_in):
-        msg = self.get_msg_id() + ":" + msg_in + ":0"
         if self.connected:
+            msg = self.get_msg_id() + ":" + msg_in
             print(f"out[{msg}]")
+            msg += ":end"
             self._sending = True
             self.serial.write(bytes(msg, encoding="utf8"))
             while True:
                 data = self.serial.readline()
                 s_data = data.decode().rstrip()
                 if len(s_data) > 0:
-                    s_data = s_data.rstrip(':0')
+                    s_data = s_data.rstrip(':end')
                     print(f'in[{s_data}]')
 
                 datas = s_data.split(":")
                 if len(datas) > 0 and str(self._msg_id) == datas[0]:
-                    if len(datas) > 1:
-                        self.response = datas[1]
+                    self.response = s_data
+                    if datas[-1] == 1:
                         if self.callback is not None:
                             self.callback()
+                    else:
+                        self.send_msg(msg_in)
                     self._sending = False
                     break
         else:

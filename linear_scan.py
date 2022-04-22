@@ -1,5 +1,5 @@
 import os
-from time import strftime
+from time import strftime, sleep
 import json
 
 
@@ -16,7 +16,6 @@ class LinearScan(object):
         self.color = color
         self._callback = c
         self._step_callback = sc
-        self._lasers = [False, False]       # left/right
         self.path = None
         self.pitch = pitch
         self.metric = metric
@@ -48,22 +47,32 @@ class LinearScan(object):
             os.makedirs(self.path)
         self.save_details()
 
-        for i in range(1, self.steps+1):
+        for i in range(0, self.steps):
             if self.ll:
                 if self.rl or self.color:
                     self.arduino.send_msg("L11")     # Turn ON left laser
-                self.android.take_picture(f'%s\\left_%04d.jpg' % (self.path, i))
+                    sleep(0.2)
+                pic = 'left_%04d.jpg' % i
+                self.android.take_picture(f'%s\\%s' % (self.path, pic))
+                print(pic)
                 if self.rl or self.color:
                     self.arduino.send_msg("L10")     # Turn OFF left laser
             if self.rl:
                 if self.ll or self.color:
                     self.arduino.send_msg("L21")     # Turn ON right laser
-                self.android.take_picture(f'%s\\right_%04d.jpg' % (self.path, i))
+                    sleep(0.2)
+                pic = 'right_%04d.jpg' % i
+                self.android.take_picture(f'%s\\%s' % (self.path, pic))
+                print(pic)
                 if self.ll or self.color:
                     self.arduino.send_msg("L20")     # Turn OFF right laser
+                    sleep(0.2)
             if self.color:
-                self.android.take_picture(f'%s\\color_%04d.jpg' % (self.path, i))
+                pic = 'color_%04d.jpg' % i
+                self.android.take_picture(f'%s\\%s' % (self.path, pic))
+                print(pic)
             self.arduino.send_msg(f"STEP:{self.pps}:CW")      # turn platform
+            sleep(0.2)
             if self._step_callback is not None:
                 self._step_callback(i+1)
 

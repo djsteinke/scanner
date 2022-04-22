@@ -205,9 +205,9 @@ def calc_normals(xyz, a):
     for i in range(r+1, length-i_off-r, 1):
         nx, ny, nz = get_normal_b(xyz, i, i_off, r, a)
 
-        xyz[i][3] = nx
-        xyz[i][4] = ny
-        xyz[i][5] = nz
+        xyz[i][6] = nx
+        xyz[i][7] = ny
+        xyz[i][8] = nz
     return xyz
 
 
@@ -267,7 +267,7 @@ def points_process_images(images, color=None):
     for i, path in enumerate(images):
         pic_num = path.split('right_')
         pic_num = int(pic_num[1].split('.')[0])
-        print("II: %03d/%03d processing %s" % (pic_num, s, path))
+        print("II: %03d/%03d processing %s" % (pic_num+1, s, path))
         img = cv2.imread(path)
         tmin = 200
         c = None

@@ -39,7 +39,7 @@ class Android(object):
     def take_picture(self, path):
         res = run(['adb', '-s', self.d, 'shell', 'input', 'keyevent', 'KEYCODE_CAMERA'], capture_output=True)
         print_res(res)
-        sleep(1)
+        sleep(3)
         while True:
             res = run(['adb', '-s', self.d, 'shell', 'ls', '-Art', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
                       capture_output=True)

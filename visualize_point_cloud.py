@@ -27,10 +27,10 @@ def main():
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220406081736"
+        dataname = "20220420115713"
         xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
         points = []
-
+        normals = []
         for line in xyz:
             x, y, z, r, g, b, nx, ny, nz = line.split()
             r = str(round(float(r)/255.0, 2))
@@ -38,9 +38,13 @@ def main():
             b = str(round(float(b)/255.0, 2))
             #print(x, y, z, r, g, b)
             points.append([x, y, z])
+            normals.append([nx, ny, nz])
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
-        # pcd = o3d.io.read_point_cloud(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", format='xyzn')
+
+        pcd.normals = o3d.utility.Vector3dVector(normals)
+
+        #pcd = o3d.io.read_point_cloud(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", format='xyzcn')
     else:
         xyz = open(path + '\\' + file, mode="r")
         points = []

@@ -103,7 +103,7 @@ def calibration_clicked():
     d = getcwd() + "\\calibration"
     if not isdir(d):
         makedirs(d)
-    android.take_picture(d + "\\calibration_0000.jpg")
+    android.take_picture(d + "\\linear_calibration_0000.jpg")
 
 
 def step(s):
@@ -311,6 +311,10 @@ if __name__ == '__main__':
     #f1 = Frame(mn, pady=10)
     #f1.columnconfigure(0, weight=1)
     #f1.columnconfigure(1, weight=1)
+
+    mn_row += 1
+    but_start = Button(mn, text="Calibration", command=calibration_clicked, font=font_bold, width=10)
+    but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=(20, 0))
 
     mn_row += 1
     but_start = Button(mn, text="Start Scan", command=scan_clicked, font=font_bold, width=10)
