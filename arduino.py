@@ -77,7 +77,7 @@ class Arduino(object):
                     if found:
                         print(msg_id, success)
                         break
-                if cnt >= 20:
+                if cnt >= 10:
                     self.serial.write(bytes(str(m), encoding='utf-8'))
                     cnt = 0
                 cnt += 1
