@@ -15,6 +15,11 @@ def points_triangulate(points, y_offset, color=None):
 
     cam_degree = 30
     px, py = points
+
+    pz = y_roi[1]-py
+    calc_z = pz/scaler
+    px /= scaler
+    py /= scaler
     cam_angle = math.radians(cam_degree)
     calc_x = px / math.tan(cam_angle)
     calc_y = px - y_offset
@@ -26,7 +31,7 @@ def points_triangulate(points, y_offset, color=None):
     return [
         calc_x,
         calc_y,
-        y_roi[1]-py * 1.00,
+        calc_z,
         bgr[2], bgr[1], bgr[0],
         0.0, 0.0, 0.0
     ]
@@ -76,7 +81,13 @@ def red_val(in_val, t_min):
     g = int(in_val[1])
     b = int(in_val[0])
     v = 1.2
+    """
     if r > t_min and r > g*v and r > b*v:
+        return r - (g+b)
+    else:
+        return 0
+    """
+    if r >= t_min:
         return r - (g+b)
     else:
         return 0
