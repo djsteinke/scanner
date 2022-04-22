@@ -88,7 +88,11 @@ def red_val(in_val, t_min):
         return 0
     """
     if r >= t_min:
-        return r - (g+b)
+        ret = r - (g+b)
+        if ret > 0:
+            return ret
+        else:
+            return 0
     else:
         return 0
 
@@ -101,25 +105,14 @@ def points_max_cols(img, threshold=(220, 255)):
     t_min, _ = threshold
     xy = list()
 
-    y_step = int(scaler*float(details['dps']))
-
-    for i in range(y_roi[0], y_roi[1], y_step):
+    for i in range(y_roi[0], y_roi[1], int(scaler)):
         mx = 0
         mv = 0
-        for x in range(x_roi[0], x_roi[1], 3):
-            if t_min >= 75:
-                v = red_val(img[i, x], t_min)
-                if v > mv:
-                    mv = v
-                    mx = x
-                #if img[i, x, 2] > mv and img[i, x, 2] >= t_min:
-                #    mv = img[i, x, 2]
-                #    mx = x
-            else:
-                avg = sum(img[i, x])*1.0
-                if avg > mv and avg >= t_min:
-                    mv = avg
-                    mx = x
+        for x in range(x_roi[0], x_roi[1], 1):
+            v = red_val(img[i, x], 60)
+            if v > mv:
+                mv = v
+                mx = x
 
         # valid = i < m*mx + b
         # valid = True
