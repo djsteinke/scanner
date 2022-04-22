@@ -104,7 +104,7 @@ class LinearScan(object):
                 print(pic)
                 logger.debug(f'Picture[{pic}] saved.')
             # self.arduino.send_msg(f"STEP:{self.pps}:CW")      # turn platform
-            self.arduino.send_msg_new(6, 0, self.pps)
+            self.arduino.send_msg_new(6, 1, self.pps)
             logger.debug(f'PICO.STEP[{i}]')
             sleep(0.2)
             if self._step_callback is not None:

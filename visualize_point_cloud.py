@@ -27,7 +27,7 @@ def main():
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220406081736"
+        dataname = "20220422123148"
         xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
         points = []
         normals = []
@@ -42,7 +42,7 @@ def main():
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
 
-        pcd.normals = o3d.utility.Vector3dVector(normals)
+        #pcd.normals = o3d.utility.Vector3dVector(normals)
 
         #pcd = o3d.io.read_point_cloud(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", format='xyzcn')
     else:

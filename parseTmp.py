@@ -274,7 +274,7 @@ def points_process_images(images, color=None):
         if color is not None:
             c = cv2.imread(color[i])
             img = cv2.subtract(img, c)
-            tmin = 100
+            tmin = 60
         h, w, _ = img.shape
         if ratio > 1:
             h_tmp = int(h/ratio)
@@ -324,7 +324,7 @@ def parse_images(images, color=None):
 def main():
     global details
     color = []
-    scan_folder = "20220420131915"
+    scan_folder = "20220422123148"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
 
@@ -428,9 +428,9 @@ def tmp_pic():
 
 
 def process_calibration_pics():
-    scan_folder = "20220407103614"
-    path = getcwd() + "\\scans\\" + scan_folder + '\\'
-    pic = f"{path}calib_one.jpg"
+    scan_folder = "calibration"
+    path = getcwd() + "\\" + scan_folder + '\\'
+    pic = f"{path}linear_calibration_0000.jpg"
 
     img = cv2.imread(pic)
     x_r, y_r = get_roi(pic)
@@ -469,7 +469,8 @@ if __name__ == "__main__":
     details = {}
     x_roi = [0, 0]
     y_roi = [0, 0]
-    scaler = 10.1 #(px/mm)
+    #scaler = 10.1 #(px/mm)
+    scaler = 346.26/20.0
     ratio = 1
     main()
     #process_calibration_pics()
