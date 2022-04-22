@@ -125,33 +125,39 @@ def stop_scan():
 def move_right():
     turns = float(mv_turns.get('1.0', 'end-1c'))
     motor_steps = 400 * turns
-    arduino.send_msg(f"STEP:{motor_steps}:CCW")  # turn platform
+    arduino.send_msg_new(6, 1, motor_steps)         # turn platform
+    # arduino.send_msg(f"STEP:{motor_steps}:CCW")     # turn platform
 
 
 def move_left():
     turns = float(mv_turns.get('1.0', 'end-1c'))
     motor_steps = 400 * turns
-    arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
+    arduino.send_msg_new(6, 0, motor_steps)         # turn platform
+    #arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
 
 
 def laser_one():
     if laser_one_button['relief'] == 'raised':
-        arduino.send_msg("L11")
+        #arduino.send_msg("L11")
+        arduino.send_msg_new(2)
         laser_one_button.config(bg="#EC7063")
         laser_one_button['relief'] = 'sunken'
     else:
-        arduino.send_msg("L10")
+        #arduino.send_msg("L10")
+        arduino.send_msg_new(1)
         laser_one_button.config(bg="SystemButtonFace")
         laser_one_button['relief'] = 'raised'
 
 
 def laser_two():
     if laser_two_button['relief'] == 'raised':
-        arduino.send_msg("L21")
+        #arduino.send_msg("L21")
+        arduino.send_msg_new(4)
         laser_two_button.config(bg="#EC7063")
         laser_two_button['relief'] = 'sunken'
     else:
-        arduino.send_msg("L20")
+        #arduino.send_msg("L20")
+        arduino.send_msg_new(3)
         laser_two_button.config(bg="SystemButtonFace")
         laser_two_button['relief'] = 'raised'
 
@@ -169,7 +175,8 @@ def arduino_connect():
         arduino_con_bt.config(bg="#EC7063")
         arduino_con_bt['relief'] = 'sunken'
         r = rpm.get('1.0', 'end-1c')
-        arduino.send_msg(f'RPM:{r}')
+        #arduino.send_msg(f'RPM:{r}')
+        arduino.send_msg_new(5, 0, r)
     else:
         arduino_con_bt.config(bg="SystemButtonFace")
         arduino_con_bt['relief'] = 'raised'

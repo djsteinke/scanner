@@ -50,11 +50,35 @@ class Arduino(object):
 
     def get_msg_id(self):
         self._msg_id += 1
-        return str(self._msg_id)
+        return self._msg_id
+
+    def send_msg_new(self, a, d=0, v=0):
+        if self.connected:
+            m = self.get_msg_id() + 512     # MSG ID 10 bits
+            m = m << 4                      # Action 4 bits
+            m += a                          # Action
+            m = m << 2                      # Direction 2 bits
+            m += d                          # Direction
+            m = m << 16                     # Value 16 bits
+            m += v                          # Value
+
+            self.serial.write(bytes(str(m), encoding='utf-8'))
+
+            while True:
+                data = self.serial.readline()
+                if data:
+                    res = int(data)
+                    msg_id = res & 0x7c0
+                    msg_id = msg_id >> 6
+                    found = msg_id == self._msg_id
+                    success = res & 0x003f == 1
+                    if found:
+                        print(msg_id, success)
+                        break
 
     def send_msg(self, msg_in):
         if self.connected:
-            msg = self.get_msg_id() + ":" + msg_in
+            msg = str(self.get_msg_id()) + ":" + msg_in
             print(f"out[{msg}]")
             msg += ":end"
             self._sending = True
