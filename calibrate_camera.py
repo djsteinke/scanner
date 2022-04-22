@@ -32,33 +32,7 @@ out = True
 printed = False
 
 
-def get_p2p_dist(p):
-    print(p[0], p[1])
-    print(f'x[%0.2f] y[%0.2f]' % (p[0, 0, 0], p[0, 0, 1]))
-    avg_x = []
-    avg_y = []
-    for y in range(0, ny):
-        for x in range(0, nx):
-            x0 = p[y*x+x, 0, 0]
-            y0 = p[y*x+x, 0, 1]
-            x1 = p[y*x+x+1, 0, 0]
-            y1 = p[y*x+x+1, 0, 1]
-            d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
-            #print(x0, y0, x1, y1, d)
-            avg_x.append(d)
-    for x in range(0, nx):
-        for y in range(0, ny):
-            x0 = p[y*x+x, 0, 0]
-            y0 = p[y*x+x, 0, 1]
-            x1 = p[y*x+x+1, 0, 0]
-            y1 = p[y*x+x+1, 0, 1]
-            d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
-            #print(x0, y0, x1, y1, d)
-            avg_y.append(d)
 
-    avgX = sum(avg_x)/len(avg_x)
-    avgY = sum(avg_y)/len(avg_y)
-    print('avg_x[%0.2f], avg_y[%0.2f]' % (avgX, avgY))
 
 
 def video_stream():

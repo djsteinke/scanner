@@ -90,11 +90,13 @@ def points_max_cols(img, threshold=(220, 255)):
     t_min, _ = threshold
     xy = list()
 
-    for i in range(y_roi[0], y_roi[1], 3):
+    y_step = int(scaler*float(details['dps']))
+
+    for i in range(y_roi[0], y_roi[1], y_step):
         mx = 0
         mv = 0
         for x in range(x_roi[0], x_roi[1], 3):
-            if t_min > 75:
+            if t_min >= 75:
                 v = red_val(img[i, x], t_min)
                 if v > mv:
                     mv = v
@@ -274,7 +276,7 @@ def points_process_images(images, color=None):
         if color is not None:
             c = cv2.imread(color[i])
             img = cv2.subtract(img, c)
-            tmin = 60
+            tmin = 75
         h, w, _ = img.shape
         if ratio > 1:
             h_tmp = int(h/ratio)
@@ -289,10 +291,11 @@ def points_process_images(images, color=None):
         if details['type'] == "circular":
             xyz = [points_triangulate_cir((x - (w / 2), y), x_offset, color=c) for x, y in xy]
             xyz = calc_normals(xyz, x_offset)
-            x_offset -= float(details['dps'])
+            x_offset -= - pic_num * float(details['dps'])
         else:
             xyz = [points_triangulate((x - (w / 2), y), x_offset, color=c) for x, y in xy]
-            x_offset -= x_offset_pic
+            # x_offset -= x_offset_pic
+            x_offset = - pic_num * float(details['dps'])
         # xyz = [[x, y, z, xn, yn, zn] for x, y, z, xn, yn, zn in xyz if x >= 0]
         xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
         points.extend(xyz)
@@ -427,6 +430,69 @@ def tmp_pic():
     cv2.waitKey()
 
 
+def get_p2p_dist(p):
+    # print(p[0], p[1])
+    # print(f'x[%0.2f] y[%0.2f]' % (p[0, 0, 0], p[0, 0, 1]))
+    avg_x = []
+    avg_y = []
+    for y in range(0, ny):
+        for x in range(0, nx):
+            x0 = p[y*x+x, 0, 0]
+            y0 = p[y*x+x, 0, 1]
+            x1 = p[y*x+x+1, 0, 0]
+            y1 = p[y*x+x+1, 0, 1]
+            d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
+            #print(x0, y0, x1, y1, d)
+            avg_x.append(d)
+    for x in range(0, nx):
+        for y in range(0, ny):
+            x0 = p[y*x+x, 0, 0]
+            y0 = p[y*x+x, 0, 1]
+            x1 = p[y*x+x+1, 0, 0]
+            y1 = p[y*x+x+1, 0, 1]
+            d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
+            #print(x0, y0, x1, y1, d)
+            avg_y.append(d)
+
+    avgX = sum(avg_x)/len(avg_x)
+    avgY = sum(avg_y)/len(avg_y)
+    print('avg_x[%0.2f], avg_y[%0.2f]' % (avgX, avgY))
+
+
+nx = 6  # nx: number of grids in x axis
+ny = 9  # ny: number of grids in y axis
+
+
+def linear_calibration_process():
+    scan_folder = "calibration"
+    path = getcwd() + "\\" + scan_folder + '\\'
+    pic = f"{path}linear_calibration_0000.jpg"
+
+    img = cv2.imread(pic)
+
+
+    objp = np.zeros((nx * ny, 3), np.float32)
+    objp[:, :2] = np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    objpoints = []  # 3d points in real world space
+    imgpoints = []  # 2d points in image plane.
+
+    dimensions = img.shape  # height, width, number of channels in image
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)
+    color_img = img
+    if ret:
+        #print("Corners found.")
+        objpoints.append(objp)
+        imgpoints.append(corners)
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        # Draw and display the corners
+        #print(corners2)
+        get_p2p_dist(corners2)
+
+
 def process_calibration_pics():
     scan_folder = "calibration"
     path = getcwd() + "\\" + scan_folder + '\\'
@@ -472,6 +538,7 @@ if __name__ == "__main__":
     #scaler = 10.1 #(px/mm)
     scaler = 346.26/20.0
     ratio = 1
-    main()
+    #main()
+    linear_calibration_process()
     #process_calibration_pics()
     #tmp_pic()
