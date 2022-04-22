@@ -290,7 +290,7 @@ def points_process_images(images, color=None):
 
         xy = points_max_cols(img, threshold=(tmin, 255))
         # xy = points_max_cols(img)
-        xy = remove_noise(xy, w)
+        #xy = remove_noise(xy, w)
 
         if details['type'] == "circular":
             xyz = [points_triangulate_cir((x - (w / 2), y), x_offset, color=c) for x, y in xy]
@@ -540,9 +540,9 @@ if __name__ == "__main__":
     x_roi = [0, 0]
     y_roi = [0, 0]
     #scaler = 10.1 #(px/mm)
-    scaler = 346.26/20.0
+    scaler = 229.46/20.0
     ratio = 1
-    #main()
-    linear_calibration_process()
+    main()
+    #linear_calibration_process()
     #process_calibration_pics()
     #tmp_pic()
