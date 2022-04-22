@@ -94,7 +94,7 @@ def points_max_cols(img, threshold=(220, 255)):
         mx = 0
         mv = 0
         for x in range(x_roi[0], x_roi[1], 3):
-            if t_min > 150:
+            if t_min > 75:
                 v = red_val(img[i, x], t_min)
                 if v > mv:
                     mv = v
@@ -324,7 +324,7 @@ def parse_images(images, color=None):
 def main():
     global details
     color = []
-    scan_folder = "20220406081736"
+    scan_folder = "20220420131915"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
 

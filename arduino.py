@@ -80,7 +80,6 @@ class Arduino(object):
         if self.connected:
             msg = str(self.get_msg_id()) + ":" + msg_in
             print(f"out[{msg}]")
-            msg += ":end"
             self._sending = True
             self.serial.write(bytes(msg, encoding="utf8"))
             while True:
@@ -96,8 +95,6 @@ class Arduino(object):
                     if datas[-1] == 1:
                         if self.callback is not None:
                             self.callback()
-                    else:
-                        self.send_msg(msg_in)
                     self._sending = False
                     break
         else:

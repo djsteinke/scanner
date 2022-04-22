@@ -34,8 +34,8 @@ def adb(start):
     return res.returncode
 
 
-def in_progress(text, close):
-    global popup
+def in_progress(text, close, result=None):
+    global popup, android_connected
     if not close:
         popup = Toplevel(root)
         popup.geometry('300x100+100+450')
@@ -51,6 +51,9 @@ def in_progress(text, close):
     else:
         if popup is not None:
             popup.destroy()
+        if result == "connected":
+            android_connected = not android_connected
+            connect_android['text'] = 'Disconnect' if android_connected else 'Connect'
 
 
 def connect():
@@ -124,14 +127,14 @@ def stop_scan():
 
 def move_right():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = 400 * turns
+    motor_steps = int(400 * turns)
     arduino.send_msg_new(6, 1, motor_steps)         # turn platform
     # arduino.send_msg(f"STEP:{motor_steps}:CCW")     # turn platform
 
 
 def move_left():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = 400 * turns
+    motor_steps = int(400 * turns)
     arduino.send_msg_new(6, 0, motor_steps)         # turn platform
     #arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
 
