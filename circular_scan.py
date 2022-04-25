@@ -50,6 +50,10 @@ class CircularScan(object):
         # if os.path.isdir(calib_dir):
         #     shutil.copytree(calib_dir, self.path)
 
+        pic = 'calibration_line.jpg'
+        self.android.take_picture(f'%s\\%s' % (self.path, pic))
+        sleep(0.2)
+
         if self.ll:
             self.arduino.send_msg_new(2)
             module_logger.debug('PICO.LL ON')
