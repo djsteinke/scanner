@@ -10,6 +10,7 @@ from os import getcwd, makedirs
 from scan_popup import ScanPopup
 from calibration import Calibration
 from hdpitkinter import HdpiTk
+import logging
 
 cam_id = 0
 arduino = Arduino(speed=9600)
@@ -23,6 +24,23 @@ popup = None
 
 font = "arial 9"
 font_bold = font + " bold"
+
+# create logger with 'spam_application'
+logger = logging.getLogger('CircularScan')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('scan.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 
 def adb(start):
@@ -95,9 +113,13 @@ def scan_clicked():
     ll = use_left_laser.get() == 1
     rl = use_right_laser.get() == 1
     color = use_color.get() == 1
-    scan = CircularScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_complete, sc=step,
+    scan = CircularScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_started, sc=step,
                         degrees=degrees, rl=rl, ll=ll, color=color)
     Timer(0.1, scan.start).start()
+
+
+def scan_started():
+    scan_popup.tl.grab_set()
 
 
 def calibration_clicked():
