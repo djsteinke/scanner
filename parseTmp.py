@@ -1,13 +1,12 @@
-import subprocess
 import glob
 from os import getcwd
 import math
 import cv2
-import numpy as np
 from model.pointset import *
 from json import load
 import visualize_point_cloud
-
+from parser_roi import get_roi_by_path
+from parser_util import points_max_cols
 
 count = 0
 
@@ -63,63 +62,6 @@ def points_triangulate_cir(points, a, color=None):
         (bgr[2]*1.0)/255.0, (bgr[1]*1.0)/255.0, (bgr[0]*1.0)/255.0,
         0.0, 0.0, 0.0
     ]
-
-
-def red_val(in_val, t_min):
-    r = int(in_val[2])
-    g = int(in_val[1])
-    b = int(in_val[0])
-    v = 1.3
-
-    if r > t_min and r > g*v and r > b*v:
-        return r - (g+b)/2.0/v
-    else:
-        return 0
-    """
-    if r >= t_min:
-        ret = r - (g+b)
-        if ret > 0:
-            return ret
-        else:
-            return 0
-    else:
-        return 0
-    """
-
-
-def points_max_cols(img, threshold=(220, 255), c=False):
-    """
-    Read maximum pixel value in one color channel for each row
-    """
-
-    t_min, t_max = threshold
-    xy = list()
-
-    y_step = int(scaler * float(details['dps']) / (ratio*1.0))
-
-    for i in range(y_roi[0], y_roi[1], y_step):
-        mx = 0
-        mv = 0
-        for x in range(x_roi[0], x_roi[1], 1):
-            if c: #details['color']:
-                avg = sum(img[i, x])
-                if avg > mv and avg >= t_min and img[i, x, 2] < t_max:
-                    mv = avg
-                    mx = x
-            else:
-                v = red_val(img[i, x], 150)
-                if v > mv:
-                    mv = v
-                    mx = x
-
-        # valid = i < m*mx + b
-        # valid = True
-        if mv > 0:
-            xy.append((mx, i))
-        # if mv[2] > tmin and valid:
-        #     xy.append((mx, i))
-
-    return xy
 
 
 def get_normal(xyz, i, i_off):
@@ -237,33 +179,13 @@ def calc_normals_b(xyz):
     return xyz
 
 
-def get_roi(path):
-    xroi = [0, 0]
-    yroi = [0, 0]
-    img = cv2.imread(path)
-    h, w, c = img.shape
-    shrink = 6
-    h_tmp = int(h / shrink)
-    w_tmp = int(w / shrink)
-    roi = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LINEAR_EXACT)
-    r = cv2.selectROI("ROI", roi)
-    xroi[0] = int(r[0]) * shrink
-    xroi[1] = int(r[0] + r[2]) * shrink
-    yroi[0] = int(r[1]) * shrink
-    yroi[1] = int(r[1] + r[3]) * shrink
-    print('ROI')
-    print(xroi, yroi)
-    cv2.destroyWindow("ROI")
-    return [int(xroi[0] / ratio), int(xroi[1] / ratio)], [int(yroi[0] / ratio), int(yroi[1] / ratio)]
-
-
 def points_process_images(images, color=None):
     global x_roi, y_roi
     turns = 1
     per_turn = 2
     x_offset_pic = turns * per_turn
     points = []
-    x_roi, y_roi = get_roi(images[0])
+    x_roi, y_roi = get_roi_by_path(images[0], ratio)
     x_offset_pic = x_offset_pic * scaler / ratio
     x_offset = 0.0
     #images = images[1:]
@@ -336,6 +258,7 @@ def parse_images(images, color=None):
 def main():
     global details
     color = []
+    left = []
     scan_folder = "20220424102807"
     path = getcwd() + "\\scans\\" + scan_folder
     filename = f'{path}\\{scan_folder}.xyz'
@@ -350,11 +273,15 @@ def main():
     right = glob.glob("%s/right*" % path.rstrip('/'))
     right.sort()
 
+    if details['left']:
+        left = glob.glob("%s/left*" % path.rstrip('/'))
+        left.sort()
+
     if details['color']:
         color = glob.glob("%s/color*" % path.rstrip('/'))
         color.sort()
 
-    print(f'RIGHT[{len(right)}] COLOR[{len(color)}]')
+    print(f'RIGHT[{len(right)}] LEFT[{len(left)}] COLOR[{len(color)}]')
     if len(color) == 0:
         color = None
     steps = details['steps']
@@ -363,13 +290,13 @@ def main():
 
     right = parse_images(right, color=color)
 
-    #right = remove_noise(right)
-    #xyz = calc_normals(xyz)
+    if details['left']:
+        left = parse_images(left, color=color)
 
     print("I: Writing pointcloud to %s" % filename)
-
     output_asc_pointset(filename, right, 'xyzcn')
 
+    # Visualize point cloud
     visualize_point_cloud.main(filename)
     #subprocess.run(['python', '-f', f'{scan_folder}.xyz', '-p', path], shell=True)
 
@@ -396,7 +323,7 @@ def tmp_pic():
     h, w, c = sub.shape
 
     ratio = 6
-    x_roi, y_roi = get_roi(pic)
+    x_roi, y_roi = get_roi_by_path(pic)
 
     f_xy = list()
     xy = points_max_cols(sub, threshold=(60, 255), c=True)
@@ -448,11 +375,15 @@ def tmp_pic():
     cv2.waitKey()
 
 
+nx = 6              # nx: number of grids in x axis
+ny = 9              # ny: number of grids in y axis
+
+
 def get_p2p_dist(p):
     # print(p[0], p[1])
     # print(f'x[%0.2f] y[%0.2f]' % (p[0, 0, 0], p[0, 0, 1]))
-    avg_x = []
-    avg_y = []
+    avg_r = []
+    avg_c = []
     for y in range(0, ny):
         for x in range(0, nx):
             x0 = p[y*x+x, 0, 0]
@@ -460,8 +391,7 @@ def get_p2p_dist(p):
             x1 = p[y*x+x+1, 0, 0]
             y1 = p[y*x+x+1, 0, 1]
             d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
-            #print(x0, y0, x1, y1, d)
-            avg_x.append(d)
+            avg_r.append(d)
     for x in range(0, nx):
         for y in range(0, ny):
             x0 = p[y*x+x, 0, 0]
@@ -469,16 +399,12 @@ def get_p2p_dist(p):
             x1 = p[y*x+x+1, 0, 0]
             y1 = p[y*x+x+1, 0, 1]
             d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
-            #print(x0, y0, x1, y1, d)
-            avg_y.append(d)
+            avg_c.append(d)
 
-    avgX = sum(avg_x)/len(avg_x)
-    avgY = sum(avg_y)/len(avg_y)
-    print('avg_x[%0.2f], avg_y[%0.2f]' % (avgX, avgY))
-
-
-nx = 6  # nx: number of grids in x axis
-ny = 9  # ny: number of grids in y axis
+    avg_x = sum(avg_r)/len(avg_r)
+    avg_y = sum(avg_c)/len(avg_c)
+    print('avg_x[%0.2f], avg_y[%0.2f]' % (avg_x, avg_y))
+    return avg_x, avg_y
 
 
 def linear_calibration_process():
@@ -512,13 +438,13 @@ def linear_calibration_process():
         get_p2p_dist(corners2)
 
 
-def process_calibration_pics():
+def process_calibration_pics(ratio):
     scan_folder = "calibration"
     path = getcwd() + "\\" + scan_folder + '\\'
     pic = f"{path}linear_calibration_0000.jpg"
 
     img = cv2.imread(pic)
-    x_r, y_r = get_roi(pic)
+    x_r, y_r = get_roi_by_path(pic, ratio)
     diff = []
     avg = []
     rows = []

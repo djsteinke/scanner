@@ -49,7 +49,7 @@ def main(p=None):
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220424102807"
+        dataname = "20220425121237"
         xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
         points = []
         normals = []
