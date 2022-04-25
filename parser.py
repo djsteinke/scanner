@@ -105,7 +105,7 @@ def points_triangulate(points, offset, color=None, right=True):
 
 def points_process_images(images, color=None, right=True):
     points = []
-    # images = images[1:]
+    images = images[1:]
     s = details['steps']
     for i, path in enumerate(images):
         if right:

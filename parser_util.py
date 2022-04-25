@@ -16,6 +16,44 @@ def remove_noise(xy, w):
     return f_xy
 
 
+def points_min_cols(img, threshold=(0, 60), c=False, roi=None, step=None):
+    """
+    Read maximum pixel value in one color channel for each row
+    """
+    if roi is None:
+        x_roi, y_roi = get_roi_by_img(img, 1)
+    else:
+        x_roi = roi[0]
+        y_roi = roi[1]
+
+    t_min, t_max = threshold
+    xy = list()
+
+    y_step = 5
+    if step is not None:
+        y_step = int(step[0] * float(step[1]) / (step[2]*1.0))  # scalar, dps, ratio
+
+    for i in range(y_roi[0], y_roi[1], y_step):
+        mx = 0
+        mv = 0
+        for x in range(x_roi[0], x_roi[1], 1):
+            if c:
+                avg = sum(img[i, x])
+                if mv < avg and avg >= t_min and img[i, x, 2] < t_max:
+                    mv = avg
+                    mx = x
+            else:
+                v = red_val(img[i, x], 150)
+                if v > mv:
+                    mv = v
+                    mx = x
+
+        if mv > 0:
+            xy.append((mx, i))
+
+    return xy
+
+
 def points_max_cols(img, threshold=(60, 255), c=False, roi=None, step=None):
     """
     Read maximum pixel value in one color channel for each row

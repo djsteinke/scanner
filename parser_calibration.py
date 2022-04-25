@@ -47,7 +47,7 @@ class Calibration(object):
         self.ll_c = []
         self.rl_c = []
         self.get_scalar()
-        self.get_c()
+        self.get_c_tmp()
 
     def get_scalar(self):
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -62,6 +62,20 @@ class Calibration(object):
             self._scalar = (self.scalar_x + self.scalar_y)/2.0
         else:
             print('ERROR: Pattern not found.')
+
+    def get_c_tmp(self):
+        rx, ry = get_roi_by_img(self.line, 1)
+        roi = [rx, ry]
+        xy = parser_util.points_min_cols(self.line, c=True, roi=roi)
+        xy_l = len(xy) - 1
+        print(xy)
+        p = [[xy[0][0], xy[0][1]], [xy[xy_l][0], xy[xy_l][1]]]
+        m = (p[1][1] - p[0][1]) * 1.0 / ((p[1][0] - p[0][0]) * 1.0)
+        b = p[0][1] - (m * p[0][0])
+        self.rl_c.append(m)
+        self.rl_c.append(b)
+        self.ll_c.append(m)
+        self.ll_c.append(b)
 
     def get_c(self):
         roi = []

@@ -75,9 +75,6 @@ def main(p=None):
         points = []
         for line in xyz:
             x, y, z, r, g, b, nx, ny, nz = line.split()
-            r = str(round(float(r)/255.0, 2))
-            g = str(round(float(g)/255.0, 2))
-            b = str(round(float(b)/255.0, 2))
             points.append([x, y, z])
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
