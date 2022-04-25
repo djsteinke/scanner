@@ -22,35 +22,63 @@ def temp():
     o3d.visualization.draw_geometries([pcd], width=1280, height=720)
 
 
-def main():
+def vis_points(in_points):
+    points = []
+    normals = []
+    colors = []
+    for x, y, z, r, g, b, nx, ny, nz in in_points:
+        #r = str(round(float(r) / 255.0, 2))
+        #g = str(round(float(g) / 255.0, 2))
+        #b = str(round(float(b) / 255.0, 2))
+        # print(x, y, z, r, g, b)
+        points.append([x, y, z])
+        normals.append([nx, ny, nz])
+        colors.append([r, g, b])
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+    pcd.normals = o3d.utility.Vector3dVector(normals)
+    pcd.colors = o3d.utility.Vector3dVector(colors)
+
+    o3d.visualization.draw_geometries([pcd], width=1280, height=720)
+
+
+def main(p=None):
     global path
+    if p is not None:
+        path = p
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220422123148"
+        dataname = "20220424102807"
         xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
         points = []
         normals = []
+        colors = []
         for line in xyz:
             x, y, z, r, g, b, nx, ny, nz = line.split()
-            r = str(round(float(r)/255.0, 2))
-            g = str(round(float(g)/255.0, 2))
-            b = str(round(float(b)/255.0, 2))
+            #r = str(round(float(r)/255.0, 2))
+            #g = str(round(float(g)/255.0, 2))
+            #b = str(round(float(b)/255.0, 2))
             #print(x, y, z, r, g, b)
             points.append([x, y, z])
+            colors.append([r, g, b])
             normals.append([nx, ny, nz])
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
+        pcd.colors = o3d.utility.Vector3dVector(colors)
 
         #pcd.normals = o3d.utility.Vector3dVector(normals)
 
         #pcd = o3d.io.read_point_cloud(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", format='xyzcn')
     else:
-        xyz = open(path + '\\' + file, mode="r")
+        xyz = open(path, mode="r")
         points = []
         for line in xyz:
-            x, y, z, r, g, b = line.split()
-            points.append([x, y, z, r, g, b])
+            x, y, z, r, g, b, nx, ny, nz = line.split()
+            r = str(round(float(r)/255.0, 2))
+            g = str(round(float(g)/255.0, 2))
+            b = str(round(float(b)/255.0, 2))
+            points.append([x, y, z])
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
     if pcd is None:

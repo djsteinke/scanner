@@ -69,18 +69,18 @@ class Arduino(object):
             while True:
                 data = self.serial.readline()
                 if data:
-                    print(data)
+                    print('rec', data)
                     res = int(data)
                     msg_id = res & 0x7fc0
                     msg_id = msg_id >> 6
                     found = msg_id == self._msg_id
                     success = res & 0x003f == 1
-                    print(msg_id, success)
-                    if found:
+                    print(msg_id, found, success)
+                    if found or success:
                         break
                 if cnt >= 100 and v < 15000:
                     print('resend')
-                    self.serial.write(bytes(str(m), encoding='utf-8'))
+                    #self.serial.write(bytes(str(m), encoding='utf-8'))
                     cnt = 0
                 cnt += 1
 
