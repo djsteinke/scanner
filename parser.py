@@ -70,7 +70,7 @@ def points_triangulate(points, offset, color=None, right=True):
     if right:
         cam_degree = 30
     else:
-        cam_degree = 330
+        cam_degree = 15
     px, py = points
 
     bgr = [0, 0, 0]
@@ -85,7 +85,7 @@ def points_triangulate(points, offset, color=None, right=True):
 
     if details['type'] == 'circular':
         if not right:
-            offset += 60
+            offset += 15
         angle = math.radians(offset)
         radius = px / math.sin(cam_angle)
         calc_x = radius * math.sin(angle) / calibration.scalar
@@ -105,7 +105,7 @@ def points_triangulate(points, offset, color=None, right=True):
 
 def points_process_images(images, color=None, right=True):
     points = []
-    images = images[1:]
+    #images = images[1:]
     s = details['steps']
     for i, path in enumerate(images):
         if right:
@@ -147,17 +147,24 @@ def points_process_images(images, color=None, right=True):
 
 def main():
     global calibration, roi_x, roi_y
-
-    right = glob.glob("%s/right*" % scan_path.rstrip('/'))
-    right.sort()
-    roi_x, roi_y = get_roi_by_path(right[0], ratio)
-
+    print("main()")
+    right = []
     left = []
     color = []
+    points = []
+
+    if details['rl']:
+        right = glob.glob("%s/right*" % scan_path.rstrip('/'))
+        right.sort()
 
     if details['ll']:
         left = glob.glob("%s/left*" % scan_path.rstrip('/'))
         left.sort()
+
+    if details['rl']:
+        roi_x, roi_y = get_roi_by_path(right[0], ratio)
+    else:
+        roi_x, roi_y = get_roi_by_path(left[0], ratio)
 
     if details['color']:
         color = glob.glob("%s/color*" % scan_path.rstrip('/'))
@@ -169,18 +176,19 @@ def main():
 
     print("I: processing %d steps" % details['steps'])
 
-    right = points_process_images(right, color=color)
+    if details['rl']:
+        points = points_process_images(right, color=color)
 
     if details['ll']:
         left = points_process_images(left, color=color, right=False)
-        for l in left:
-            right.append(l)
+        for p in left:
+            points.append(p)
 
     filename = f'{scan_path}\\{scan_dir}.xyz'
     print("I: Writing pointcloud to %s" % filename)
     ps.output_asc_pointset(filename, right, 'xyzcn')
 
-    visualize_point_cloud.main(filename)
+    visualize_point_cloud.vis_points(points)
 
 
 if __name__ == "__main__":
@@ -190,7 +198,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_args()
     t = args.type
 
-    scan_dir = '20220425121237'
+    scan_dir = '20220425165711'
     scan_path = getcwd() + "\\scans\\" + scan_dir
 
     details_path = f'{scan_path}\\details.json'
@@ -205,7 +213,6 @@ if __name__ == "__main__":
     roi_y = []
 
     if t is None:
-        # calibration = Calibration(scan_path)
         main()
     elif t == '':
         calibration = None

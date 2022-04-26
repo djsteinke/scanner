@@ -63,7 +63,7 @@ class Arduino(object):
             m += v                          # Value
 
             self.serial.write(bytes(str(m), encoding='utf-8'))
-            print('sent', a, d, v)
+            print('sent', a, d, v, 'int val', m)
 
             cnt = 0
             while True:

@@ -66,17 +66,17 @@ class CircularScan(object):
             sleep(0.2)
 
         if self.rl:
-            self.arduino.send_msg_new(2)
+            self.arduino.send_msg_new(4)
             module_logger.debug('PICO.RL ON')
             sleep(0.2)
             pic = 'calibration_rl.jpg'
             self.android.take_picture(f'%s\\%s' % (self.path, pic))
             module_logger.debug(f'Picture[{pic}] saved.')
-            self.arduino.send_msg_new(1)
+            self.arduino.send_msg_new(3)
             module_logger.debug('PICO.RL OFF')
             sleep(0.2)
 
-        half = 200 * 16 * 180
+        half = int(200 * 16 / 2)
         self.arduino.send_msg_new(6, 1, half)
         pic = 'calibration_pattern.jpg'
         self.android.take_picture(f'%s\\%s' % (self.path, pic))

@@ -50,8 +50,8 @@ class Calibration(object):
         self.get_c_tmp()
 
     def get_scalar(self):
+        print('get_scalar()')
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-
         gray = cv2.cvtColor(self.pattern, cv2.COLOR_BGR2GRAY)
         ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)
         if ret:
@@ -60,17 +60,22 @@ class Calibration(object):
             self.scalar_x /= grid_size
             self.scalar_y /= grid_size
             self._scalar = (self.scalar_x + self.scalar_y)/2.0
+            print('scalar', self._scalar)
         else:
             print('ERROR: Pattern not found.')
 
     def get_c_tmp(self):
+        print('get_c_tmp()')
         rx, ry = get_roi_by_img(self.line, 1)
         roi = [rx, ry]
         xy = parser_util.points_min_cols(self.line, c=True, roi=roi)
         xy_l = len(xy) - 1
         print(xy)
         p = [[xy[0][0], xy[0][1]], [xy[xy_l][0], xy[xy_l][1]]]
-        m = (p[1][1] - p[0][1]) * 1.0 / ((p[1][0] - p[0][0]) * 1.0)
+        if p[1][0] - p[0][0] == 0:
+            m = 1
+        else:
+            m = (p[1][1] - p[0][1]) * 1.0 / ((p[1][0] - p[0][0]) * 1.0)
         b = p[0][1] - (m * p[0][0])
         self.rl_c.append(m)
         self.rl_c.append(b)
@@ -78,6 +83,7 @@ class Calibration(object):
         self.ll_c.append(b)
 
     def get_c(self):
+        print('get_c()')
         roi = []
         if self.rl is not None:
             # get x for y top, get x for y bot

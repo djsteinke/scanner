@@ -106,7 +106,7 @@ def calibration_clicked():
     d = getcwd() + "\\calibration"
     if not isdir(d):
         makedirs(d)
-    android.take_picture(d + "\\linear_calibration_0000.jpg")
+    android.take_picture(d + "\\linear_calibration_c1.jpg")
 
 
 def step(s):
