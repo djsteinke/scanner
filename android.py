@@ -22,6 +22,7 @@ class Android(object):
         print_res(res)
         if 'connected' in res.stdout.decode():
             self.connected = True
+            self.clear_camera()
             self._callback(None, True, 'connected')
 
     def disconnect(self):
