@@ -79,7 +79,7 @@ class Android(object):
     def move_files(self):
         for p in self.paths:
             res = run(
-                ['adb', '-s', self.d, 'shell', 'ls', '-ltr', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
+                ['adb', '-s', self.d, 'shell', 'ls', '-At', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
                 capture_output=True)
             filename = res.stdout.decode().replace('\r', '').replace('\n', '')
             res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', p],

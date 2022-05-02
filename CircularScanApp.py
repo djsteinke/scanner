@@ -136,7 +136,7 @@ def run_calibration():
     arduino.send_msg_new(4)
     android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F2'))
     arduino.send_msg_new(3)
-    motor_steps = int(200 * 16 * 180 / 360)
+    motor_steps = int(200.0 * 16.0 * 180.0 / 360.0)
     arduino.send_msg_new(6, 0, motor_steps)         # turn platform
     android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B0'))
     arduino.send_msg_new(2)
