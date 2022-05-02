@@ -75,7 +75,8 @@ class Android(object):
         print('move started...')
         for i, p in enumerate(self.paths):
             res = run(
-                ['adb', '-s', self.d, 'shell', 'ls', '-t', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
+                ['adb', '-s', self.d, 'shell', 'ls', '-t'
+                    , '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
                 capture_output=True)
             filename = res.stdout.decode().replace('\r', '').replace('\n', '')
             res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', p],
