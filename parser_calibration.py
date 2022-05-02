@@ -9,15 +9,11 @@ import os
 grid_size = 15.0    # mm of grid squares
 nx = 6              # nx: number of grids in x axis
 ny = 9              # ny: number of grids in y axis
-c_offset_x = -15.0
+c_offset_x = -28.0
 c_offset_y = 3654
 
-pattern_off = 60.0
-pattern_w = 2.25
-platform_w = 4
-
-yf = 62.25
-yr = -57.75
+yf = 62.245
+yr = -57.625
 
 
 def get_p2p_dist(p):
@@ -64,19 +60,29 @@ def get_scalar(img):
         return 0.0, 0.0, 0.0
 
 
+def get_slope(p):
+    m = (p[1][1] - p[0][1]) * 1.0 / ((p[1][0] - p[0][0]) * 1.0)
+    b = p[0][1] - (m * p[0][0])
+    return m, b
+
+
 class Calibration(object):
     def __init__(self, path):
         self._scalar = [0.0, 0.0]       # Front, Back
         self.scalar_x = [0.0, 0.0]
         self.scalar_y = [0.0, 0.0]
-        self.b0 = cv2.imread(f'{path}\\calibration_B0.jpg')
-        self.b1 = cv2.imread(f'{path}\\calibration_B1.jpg')
-        self.b2 = cv2.imread(f'{path}\\calibration_B2.jpg')
-        self.f0 = cv2.imread(f'{path}\\calibration_F0.jpg')
-        self.f1 = cv2.imread(f'{path}\\calibration_F1.jpg')
-        self.f2 = cv2.imread(f'{path}\\calibration_F2.jpg')
-        self.l1a = [0.0, 0.0]
-        self.l2a = [0.0, 0.0]
+        self.b0 = None
+        self.b1 = None
+        self.b2 = None
+        self.f0 = None
+        self.f1 = None
+        self.f2 = None
+        self.c0 = None
+        self.c1 = None
+        self.c2 = None
+        self.la = [[0.0, 0.0], [0.0, 0.0]]
+        self.lc = [0, 0]
+        self.lx = [[0, 0], [0, 0]]
         self.ll_c = []
         self.rl_c = []
         self.path = path
@@ -88,9 +94,19 @@ class Calibration(object):
             f = open(file, 'r')
             cal = json.load(f)
             self._scalar = [cal['scalar'][0], cal['scalar'][1]]
-            self.l1a = [cal['l1a'][0], cal['l1a'][1]]
-            self.l2a = [cal['l2a'][0], cal['l2a'][1]]
+            self.la = cal['la']
+            self.lc = cal['lc']
+            self.lx = cal['lx']
         else:
+            self.b0 = cv2.imread(f'{self.path}\\calibration_B0.jpg')
+            self.b1 = cv2.imread(f'{self.path}\\calibration_B1.jpg')
+            self.b2 = cv2.imread(f'{self.path}\\calibration_B2.jpg')
+            self.f0 = cv2.imread(f'{self.path}\\calibration_F0.jpg')
+            self.f1 = cv2.imread(f'{self.path}\\calibration_F1.jpg')
+            self.f2 = cv2.imread(f'{self.path}\\calibration_F2.jpg')
+            self.c0 = cv2.imread(f'{self.path}\\calibration_C0.jpg')
+            self.c1 = cv2.imread(f'{self.path}\\calibration_C1.jpg')
+            self.c2 = cv2.imread(f'{self.path}\\calibration_C2.jpg')
             self.get_scalar()
             self.get_c()
 
@@ -105,7 +121,7 @@ class Calibration(object):
         self.scalar_y[1] = y
 
     def get_c(self):
-        print('get_c()')
+        # print('get_c()')
         # get front r/l
         rx, ry = get_roi_by_img(self.f0, 1)
         roi = [rx, ry]
@@ -113,12 +129,12 @@ class Calibration(object):
         xy = parser_util.points_max_cols(img, c=True, roi=roi)
         xy_l = len(xy) - 1
         f2x = xy[xy_l][0]
-        print('f2', xy[xy_l][0], xy[xy_l][1])
+        # print('f2', xy[xy_l][0], xy[xy_l][1])
         img = cv2.subtract(self.f1, self.f0)
         xy = parser_util.points_max_cols(img, c=True, roi=roi)
         xy_l = len(xy) - 1
         f1x = xy[xy_l][0]
-        print('f1', xy[xy_l][0], xy[xy_l][1])
+        # print('f1', xy[xy_l][0], xy[xy_l][1])
 
         # get back r/l
         rx, ry = get_roi_by_img(self.b0, 1)
@@ -127,33 +143,49 @@ class Calibration(object):
         xy = parser_util.points_max_cols(img, c=True, roi=roi)
         xy_l = len(xy) - 1
         b2x = xy[xy_l][0]
-        print('b2', xy[xy_l][0], xy[xy_l][1])
+        # print('b2', xy[xy_l][0], xy[xy_l][1])
         img = cv2.subtract(self.b1, self.b0)
         xy = parser_util.points_max_cols(img, c=True, roi=roi)
         xy_l = len(xy) - 1
         b1x = xy[xy_l][0]
-        print('b1', xy[xy_l][0], xy[xy_l][1])
+        # print('b1', xy[xy_l][0], xy[xy_l][1])
+        self.lx = [[b1x, b2x], [f1x, f2x]]
+
+        # get center r/l
+        rx, ry = get_roi_by_img(self.c0, 1)
+        roi = [rx, ry]
+        img = cv2.subtract(self.c2, self.c0)
+        xy = parser_util.points_max_cols(img, c=True, roi=roi)
+        xy_l = len(xy) - 1
+        c2x = xy[xy_l][0]
+        # print('b2', xy[xy_l][0], xy[xy_l][1])
+        img = cv2.subtract(self.c1, self.c0)
+        xy = parser_util.points_max_cols(img, c=True, roi=roi)
+        xy_l = len(xy) - 1
+        c1x = xy[xy_l][0]
+        self.lc = [c1x, c2x]
+        print(self.lc)
 
         h, w, _ = img.shape
 
         c = w/2 + c_offset_x
-        rad = math.atan((b1x - c)/self.scalar[0]/yr)
+        rad = math.atan((b1x - self.lc[0])/self.scalar[0]/yr)
         deg = math.degrees(rad)
-        self.l1a[0] = deg
+        self.la[0][0] = deg
         print('b1', deg)
-        rad = math.atan((b2x - c)*1.0/self.scalar[0]/yr)
+        rad = math.atan((b2x - self.lc[1])*1.0/self.scalar[0]/yr)
         deg = math.degrees(rad)
-        self.l2a[0] = deg
+        self.la[0][1] = deg
         print('b2', deg)
-        rad = math.atan((f1x - c)*1.0/self.scalar[1]/yf)
+        rad = math.atan((f1x - self.lc[0])*1.0/self.scalar[1]/yf)
         deg = math.degrees(rad)
-        self.l1a[1] = deg
+        self.la[1][0] = deg
         print('f1', deg)
-        rad = math.atan((f2x - c)*1.0/self.scalar[1]/yf)
+        rad = math.atan((f2x - self.lc[1])*1.0/self.scalar[1]/yf)
         deg = math.degrees(rad)
-        self.l2a[1] = deg
+        self.la[1][1] = deg
         print('f2', deg)
-        cal = {'scalar': self.scalar, 'l1a': self.l1a, 'l2a': self.l2a}
+        cal = {'scalar': self.scalar, 'la': self.la, 'lc': self.lc, 'lx': self.lx}
         print(cal)
         d_path = self.path + "\\calibration.json"
         f = open(d_path, 'w')
@@ -165,6 +197,33 @@ class Calibration(object):
             return (y - self.rl_c[1]) / self.rl_c[0]
         else:
             return (y - self.ll_c[1]) / self.ll_c[0]
+
+    def get_scaled_xyz(self, right, px, py, offset=0):
+        # get scale at x
+        # get alpha at x
+        # use scale to get x
+        # use x and alpha for corrected xy
+        orig_x = px
+        l = 1 if right else 0
+        offset += 15 if not right else 0
+        p = [[self.lx[0][l], self.scalar[0]], [self.lx[1][l], self.scalar[1]]]
+        m, b = get_slope(p)
+        scale = m*px + b
+        p = [[self.lx[0][l], self.la[0][l]], [self.lx[1][l], self.la[1][l]]]
+        m, b = get_slope(p)
+        alpha = m*px + b
+        cam_angle = math.radians(alpha)
+
+        px -= self.lc[l]
+        angle = math.radians(offset)
+        radius = px / math.sin(cam_angle)
+        calc_z = py / scale
+        calc_x = radius * math.sin(angle) / scale
+        calc_y = radius * math.cos(angle) / scale
+
+        print(orig_x, px, scale, alpha, calc_x, calc_y, calc_z)
+
+        return calc_x, calc_y, calc_z
 
     @property
     def scalar(self):

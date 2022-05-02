@@ -78,21 +78,14 @@ def points_triangulate(points, offset, color=None, right=True):
         bgr = color[round(py), round(px)]
 
     pz = roi_y[1]-py
-    calc_z = pz/calibration.scalar
-    cam_angle = math.radians(cam_degree)
-
-    px -= calibration.get_center_x(right, py)
 
     if details['type'] == 'circular':
-        if not right:
-            offset += 15
-        angle = math.radians(offset)
-        radius = px / math.sin(cam_angle)
-        calc_x = radius * math.sin(angle) / calibration.scalar
-        calc_y = radius * math.cos(angle) / calibration.scalar
+        calc_x, calc_y, calc_z = calibration.get_scaled_xyz(right, px, pz, offset)
     else:
+        cam_angle = math.radians(cam_degree)
         calc_x = (px / math.tan(cam_angle)) / calibration.scalar
         calc_y = (px - offset) / calibration.scalar
+        calc_z = pz / calibration.scalar
 
     return [
         calc_x,
@@ -128,7 +121,7 @@ def points_process_images(images, color=None, right=True):
             img = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
             h, w, _ = img.shape
 
-        step = [calibration.scalar, float(details['dps']), ratio]
+        step = [calibration.scalar[0], float(details['dps']), ratio]
         xy = points_max_cols(img, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
         xy = remove_noise(xy, w)
 
@@ -186,7 +179,7 @@ def main():
 
     filename = f'{scan_path}\\{scan_dir}.xyz'
     print("I: Writing pointcloud to %s" % filename)
-    ps.output_asc_pointset(filename, right, 'xyzcn')
+    ps.output_asc_pointset(filename, points, 'xyzcn')
 
     visualize_point_cloud.vis_points(points)
 
@@ -198,7 +191,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_args()
     t = args.type
 
-    scan_dir = '20220430221834'
+    scan_dir = '20220502112339'
     scan_path = getcwd() + "\\scans\\" + scan_dir
 
     details_path = f'{scan_path}\\details.json'
@@ -206,7 +199,8 @@ if __name__ == "__main__":
     details = load(f)
     print(details)
 
-    calibration = Calibration(scan_path)
+    calibration_path = getcwd() + "\\calibration"
+    calibration = Calibration(calibration_path)
     ratio = 1
 
     roi_x = []

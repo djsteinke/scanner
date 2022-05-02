@@ -24,27 +24,19 @@ def get_scalar(img):
 
 scan_path = getcwd() + "\\calibration\\"
 
-fr = cv2.imread(scan_path + "calibration_F0.jpg")
-#cn = cv2.imread(scan_path + "linear_calibration_C0.jpg")
-rr = cv2.imread(scan_path + "calibration_B0.jpg")
-
-#fr_s = get_scalar(fr)
-#cn_s = get_scalar(cn)
-#rr_s = get_scalar(rr)
-
-#print(fr_s - cn_s)
-#print(cn_s - rr_s)
-
 ratio = 6
 
 f2 = cv2.imread(scan_path + "calibration_F2.jpg")
 f1 = cv2.imread(scan_path + "calibration_F1.jpg")
 f0 = cv2.imread(scan_path + "calibration_F0.jpg")
+c2 = cv2.imread(scan_path + "calibration_C2.jpg")
+c1 = cv2.imread(scan_path + "calibration_C1.jpg")
+c0 = cv2.imread(scan_path + "calibration_C0.jpg")
 h, w, _ = f2.shape
 
 h_tmp = int(h / ratio)
 w_tmp = int(w / ratio)
-f2 = cv2.subtract(f1, f0)
+f2 = cv2.subtract(c2, c0)
 f2 = cv2.resize(f2, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
 h, w, _ = f2.shape
 
