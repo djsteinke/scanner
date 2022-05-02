@@ -43,6 +43,20 @@ class Android(object):
             self.paths.append(path)
         sleep(0.5)
 
+    def clear_camera(self):
+        while True:
+            res = run(
+                ['adb', '-s', self.d, 'shell', 'ls', '-ltr', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
+                capture_output=True)
+            filename = res.stdout.decode().replace('\r', '').replace('\n', '')
+            if 'total' in filename:
+                break
+            else:
+                res = run(['adb', '-s', self.d, 'shell', 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'],
+                          capture_output=True)
+                print_res(res)
+                print('file deleted', filename)
+
     def take_picture_old(self, path):
         sleep(3)
         while True:
