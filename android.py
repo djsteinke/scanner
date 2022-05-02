@@ -15,6 +15,7 @@ class Android(object):
         self.d = f'{host}:{port}'
         self.connected = False
         self.last_filename = ""
+        self.paths = []
 
     def connect(self):
         res = run(['adb', 'connect', self.d], capture_output=True)
@@ -38,7 +39,11 @@ class Android(object):
 
     def take_picture(self, path):
         res = run(['adb', '-s', self.d, 'shell', 'input', 'keyevent', 'KEYCODE_CAMERA'], capture_output=True)
-        print_res(res)
+        if print_res(res):
+            self.paths.append(path)
+        sleep(0.5)
+
+    def take_picture_old(self, path):
         sleep(3)
         while True:
             res = run(['adb', '-s', self.d, 'shell', 'ls', '-Art', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
@@ -56,6 +61,22 @@ class Android(object):
                   capture_output=True)
         print_res(res)
         print('picture taken', filename)
+
+    def move_files(self):
+        for p in self.paths:
+            res = run(
+                ['adb', '-s', self.d, 'shell', 'ls', '-ltr', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
+                capture_output=True)
+            filename = res.stdout.decode().replace('\r', '').replace('\n', '')
+            res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', p],
+                      capture_output=True)
+            print_res(res)
+            sleep(0.5)
+            res = run(['adb', '-s', self.d, 'shell', 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'],
+                      capture_output=True)
+            print_res(res)
+            print('file moved', p)
+        self.paths = []
 
     def sync_media_service(self):
         run(['adb', '-s', self.d, 'am', 'broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE',

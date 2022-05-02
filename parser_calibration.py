@@ -4,9 +4,11 @@ from parser_roi import get_roi_by_img
 import parser_util
 
 
-grid_size = 20.0    # mm of grid squares
+grid_size = 15.0    # mm of grid squares
 nx = 6              # nx: number of grids in x axis
 ny = 9              # ny: number of grids in y axis
+c_offset_x = -15.0
+c_offset_y = 3654
 
 
 def get_p2p_dist(p):
@@ -35,15 +37,35 @@ def get_p2p_dist(p):
     return avg_x, avg_y
 
 
+def get_scalar(img):
+    print('get_scalar()')
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)
+    if ret:
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        scalar_x, scalar_y = get_p2p_dist(corners2)
+        scalar_x /= grid_size
+        scalar_y /= grid_size
+        _scalar = (scalar_x + scalar_y)/2.0
+        print('scalar', _scalar)
+        return _scalar, scalar_x, scalar_y
+    else:
+        print('ERROR: Pattern not found.')
+        return 0.0, 0.0, 0.0
+
+
 class Calibration(object):
     def __init__(self, scan_dir):
-        self._scalar = 0.0
-        self.scalar_x = 0.0
-        self.scalar_y = 0.0
-        self.line = cv2.imread(f'{scan_dir}\\calibration_line.jpg')
-        self.ll = cv2.imread(f'{scan_dir}\\calibration_ll.jpg')
-        self.rl = cv2.imread(f'{scan_dir}\\calibration_rl.jpg')
-        self.pattern = cv2.imread(f'{scan_dir}\\calibration_pattern.jpg')
+        self._scalar = [0.0, 0.0]       # Front, Back
+        self.scalar_x = [0.0, 0.0]
+        self.scalar_y = [0.0, 0.0]
+        self.b0 = cv2.imread(f'{scan_dir}\\calibration_b0.jpg')
+        self.b1 = cv2.imread(f'{scan_dir}\\calibration_b1.jpg')
+        self.b2 = cv2.imread(f'{scan_dir}\\calibration_b2.jpg')
+        self.f0 = cv2.imread(f'{scan_dir}\\calibration_f0.jpg')
+        self.f1 = cv2.imread(f'{scan_dir}\\calibration_f1.jpg')
+        self.f2 = cv2.imread(f'{scan_dir}\\calibration_f2.jpg')
         self.ll_c = []
         self.rl_c = []
         self.get_scalar()
@@ -51,18 +73,14 @@ class Calibration(object):
 
     def get_scalar(self):
         print('get_scalar()')
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        gray = cv2.cvtColor(self.pattern, cv2.COLOR_BGR2GRAY)
-        ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)
-        if ret:
-            corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-            self.scalar_x, self.scalar_y = get_p2p_dist(corners2)
-            self.scalar_x /= grid_size
-            self.scalar_y /= grid_size
-            self._scalar = (self.scalar_x + self.scalar_y)/2.0
-            print('scalar', self._scalar)
-        else:
-            print('ERROR: Pattern not found.')
+        s, x, y = get_scalar(self.b0)
+        self._scalar[0] = s
+        self.scalar_x[0] = x
+        self.scalar_y[0] = y
+        s, x, y = get_scalar(self.f0)
+        self._scalar[1] = s
+        self.scalar_x[1] = x
+        self.scalar_y[1] = y
 
     def get_c_tmp(self):
         print('get_c_tmp()')

@@ -1,3 +1,5 @@
+import logging
+from time import sleep
 from tkinter import *
 from tkinter.ttk import Progressbar
 from threading import Timer
@@ -10,7 +12,6 @@ from os import getcwd, makedirs
 from scan_popup import ScanPopup
 from calibration import Calibration
 from hdpitkinter import HdpiTk
-import logging
 
 cam_id = 0
 arduino = Arduino(speed=9600)
@@ -144,6 +145,8 @@ def run_calibration():
     arduino.send_msg_new(4)
     android.take_picture(f'%s/calibration_%s.jpg' % (d, 'B2'))
     arduino.send_msg_new(3)
+    sleep(5)
+    android.move_files()
 
 
 def step(s):

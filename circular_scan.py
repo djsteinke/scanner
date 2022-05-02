@@ -136,7 +136,10 @@ class CircularScan(object):
             sleep(0.2)
             if self._step_callback is not None:
                 self._step_callback(i+1)
-
+        sleep(5)
+        print('moving files...')
+        self.android.move_files()
+        print('moving files complete.')
         self.android.sync_media_service()
         if self._callback is not None:
             self._callback()
