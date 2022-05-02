@@ -129,21 +129,21 @@ def calibration_clicked():
 
 def run_calibration():
     d = getcwd() + "\\calibration"
-    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'F0'))
+    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F0'))
     arduino.send_msg_new(2)
-    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'F1'))
+    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F1'))
     arduino.send_msg_new(1)
     arduino.send_msg_new(4)
-    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'F2'))
+    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F2'))
     arduino.send_msg_new(3)
     motor_steps = int(200 * 16 * 180 / 360)
     arduino.send_msg_new(6, 0, motor_steps)         # turn platform
-    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'B0'))
+    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B0'))
     arduino.send_msg_new(2)
-    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'B1'))
+    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B1'))
     arduino.send_msg_new(1)
     arduino.send_msg_new(4)
-    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'B2'))
+    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B2'))
     arduino.send_msg_new(3)
     sleep(5)
     android.move_files()
