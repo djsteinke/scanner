@@ -45,42 +45,37 @@ class Android(object):
         sleep(0.5)
 
     def clear_camera(self):
-        while True:
+        cnt = 1
+        while cnt > 0:
             res = run(
-                ['adb', '-s', self.d, 'shell', 'ls', '-ltr', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
+                ['adb', '-s', self.d, 'shell', 'ls', '-A', '/storage/emulated/0/DCIM/Camera', '|', 'wc', '-l'],
                 capture_output=True)
-            filename = res.stdout.decode().replace('\r', '').replace('\n', '')
-            if 'total' in filename:
-                break
-            else:
+            cnt = int(res.stdout.decode().replace('\r', '').replace('\n', ''))
+            if cnt > 0:
+                res = run(
+                    ['adb', '-s', self.d, 'shell', 'ls', '-At', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
+                    capture_output=True)
+                filename = res.stdout.decode().replace('\r', '').replace('\n', '')
                 res = run(['adb', '-s', self.d, 'shell', 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'],
                           capture_output=True)
                 print_res(res)
                 print('file deleted', filename)
 
-    def take_picture_old(self, path):
-        sleep(3)
-        while True:
-            res = run(['adb', '-s', self.d, 'shell', 'ls', '-Art', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
-                      capture_output=True)
-            filename = res.stdout.decode().replace('\r', '').replace('\n', '')
-            if '.pending' not in filename and filename != self.last_filename:
-                break
-            sleep(0.5)
-        self.last_filename = filename
-        res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', path],
-                  capture_output=True)
-        print_res(res)
-        sleep(0.5)
-        res = run(['adb', '-s', self.d, 'shell', 'rm', '-f', f'/storage/emulated/0/DCIM/Camera/{filename}'],
-                  capture_output=True)
-        print_res(res)
-        print('picture taken', filename)
-
-    def move_files(self):
-        for p in self.paths:
+    def move_files(self, callback=None):
+        cnt = 0
+        print('check file count...', len(self.paths), 'files')
+        while cnt < len(self.paths):
             res = run(
-                ['adb', '-s', self.d, 'shell', 'ls', '-At', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
+                ['adb', '-s', self.d, 'shell', 'ls', '/storage/emulated/0/DCIM/Camera', '|', 'wc', '-l'],
+                capture_output=True)
+            cnt = int(res.stdout.decode().replace('\r', '').replace('\n', ''))
+            print('file count... %d/%d' % (cnt, len(self.paths)))
+            sleep(1)
+
+        print('move started...')
+        for i, p in enumerate(self.paths):
+            res = run(
+                ['adb', '-s', self.d, 'shell', 'ls', '-t', '/storage/emulated/0/DCIM/Camera', '|', 'tail', '-n', '1'],
                 capture_output=True)
             filename = res.stdout.decode().replace('\r', '').replace('\n', '')
             res = run(['adb', '-s', self.d, 'pull', f'/storage/emulated/0/DCIM/Camera/{filename}', p],
@@ -91,6 +86,8 @@ class Android(object):
                       capture_output=True)
             print_res(res)
             print('file moved', p)
+            if callback is not None:
+                callback(i)
         self.paths = []
 
     def sync_media_service(self):
