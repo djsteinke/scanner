@@ -477,6 +477,7 @@ def process_calibration_pics(ratio):
 
 
 if __name__ == "__main__":
+    c_offset_x = -25   # px to the left of center
     details = {}
     x_roi = [0, 0]
     y_roi = [0, 0]

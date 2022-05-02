@@ -123,9 +123,27 @@ def scan_started():
 
 
 def calibration_clicked():
+    Timer(0.1, run_calibration).start()
+
+
+def run_calibration():
     d = getcwd() + "\\calibration"
-    calibration = Calibration(arduino=arduino, android=android, path=d)
-    Timer(0.1, calibration.start).start()
+    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'F0'))
+    arduino.send_msg_new(2)
+    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'F1'))
+    arduino.send_msg_new(1)
+    arduino.send_msg_new(4)
+    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'F2'))
+    arduino.send_msg_new(3)
+    motor_steps = int(200 * 16 * 180 / 360)
+    arduino.send_msg_new(6, 0, motor_steps)         # turn platform
+    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'B0'))
+    arduino.send_msg_new(2)
+    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'B1'))
+    arduino.send_msg_new(1)
+    arduino.send_msg_new(4)
+    android.take_picture(f'%s/calibration_%s.jpg' % (d, 'B2'))
+    arduino.send_msg_new(3)
 
 
 def step(s):
@@ -146,14 +164,14 @@ def stop_scan():
 
 def move_right():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = int(400 * turns)
+    motor_steps = int(200 * 16 * turns / 360)
     arduino.send_msg_new(6, 1, motor_steps)         # turn platform
     # arduino.send_msg(f"STEP:{motor_steps}:CCW")     # turn platform
 
 
 def move_left():
     turns = float(mv_turns.get('1.0', 'end-1c'))
-    motor_steps = int(400 * turns)
+    motor_steps = int(200 * 16 * turns / 360)
     arduino.send_msg_new(6, 0, motor_steps)         # turn platform
     #arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
 
@@ -205,8 +223,8 @@ def arduino_connect():
 
 
 if __name__ == '__main__':
-    #root = HdpiTk()
-    root = Tk()
+    root = HdpiTk()
+    #root = Tk()
     root.grid_rowconfigure(0, weight=1)  # this needed to be added
     root.grid_columnconfigure(0, weight=1)  # as did this
 
@@ -265,7 +283,7 @@ if __name__ == '__main__':
     mv_left_button = Button(fr, text="<-", command=move_left, width=5)
     mv_left_button.grid(column=0, row=0, pady=3)
     mv_turns = Text(fr, width=4, height=1)
-    mv_turns.insert('1.0', '3')
+    mv_turns.insert('1.0', '5')
     mv_turns.grid(column=1, row=0, padx=(10, 10))
     mv_right_button = Button(fr, text="->", command=move_right, width=5)
     mv_right_button.grid(column=2, row=0, pady=3)
@@ -304,7 +322,7 @@ if __name__ == '__main__':
     host_value3.grid(column=4, row=0)
     Label(host_frame, text=".").grid(column=5, row=0)
     host_value4 = Text(host_frame, width=3, height=1)
-    host_value4.insert('1.0', '14')
+    host_value4.insert('1.0', '11')
     host_value4.grid(column=6, row=0, padx=(0, 10))
     host_frame.grid(column=1, row=mn_row, padx=(10, 10), pady=3, sticky=W)
 
@@ -312,7 +330,7 @@ if __name__ == '__main__':
     port_label = Label(mn, text="Port:")
     port_label.grid(column=0, row=mn_row, padx=(10, 0), pady=3, sticky=W)
     port_value = Text(mn, width=5, height=1)
-    port_value.insert('1.0', '38817')
+    port_value.insert('1.0', '5555')
     port_value.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
     connect_android = Button(mn, text="Connect", command=connect_android, width=10)

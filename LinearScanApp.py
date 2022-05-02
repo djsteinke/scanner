@@ -102,11 +102,16 @@ def scan_clicked():
     Timer(0.1, scan.start).start()
 
 
+cal_cnt = 0
+
+
 def calibration_clicked():
+    global cal_cnt
     d = getcwd() + "\\calibration"
     if not isdir(d):
         makedirs(d)
-    android.take_picture(d + "\\linear_calibration_c1.jpg")
+    android.take_picture(d + f"\\linear_calibration_{cal_cnt}.jpg")
+    cal_cnt += 1
 
 
 def step(s):

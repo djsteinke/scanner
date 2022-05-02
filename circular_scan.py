@@ -49,7 +49,7 @@ class CircularScan(object):
         # calib_dir = self.wd + "\\scans\\calibration"
         # if os.path.isdir(calib_dir):
         #     shutil.copytree(calib_dir, self.path)
-
+        """
         pic = 'calibration_line.jpg'
         self.android.take_picture(f'%s\\%s' % (self.path, pic))
         sleep(0.2)
@@ -80,7 +80,7 @@ class CircularScan(object):
         self.arduino.send_msg_new(6, 1, half)
         pic = 'calibration_pattern.jpg'
         self.android.take_picture(f'%s\\%s' % (self.path, pic))
-
+        """
         # popup to setup object
         self.tl = Toplevel()
         cb = Button(self.tl, text="Scan", command=self.scan_clicked, width=15)

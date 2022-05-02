@@ -49,11 +49,16 @@ def main(p=None):
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220425121237"
+        dataname = "20220430221834"
         xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
+        #xyz = open(input_path + '\\scans\\' + '20220429_063234' + ".xyz", mode="r")
         points = []
         normals = []
         colors = []
+        for line in xyz:
+            x, y, z = line.split()
+            points.append([x, y, z])
+        """
         for line in xyz:
             x, y, z, r, g, b, nx, ny, nz = line.split()
             #r = str(round(float(r)/255.0, 2))
@@ -63,6 +68,7 @@ def main(p=None):
             points.append([x, y, z])
             colors.append([r, g, b])
             normals.append([nx, ny, nz])
+        """
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
         pcd.colors = o3d.utility.Vector3dVector(colors)
