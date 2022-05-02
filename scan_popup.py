@@ -26,6 +26,11 @@ class ScanPopup(object):
         self.vl['text'] = msg
         self.cb['text'] = 'Close'
 
+    def move(self, val):
+        per = val / self.steps * 100
+        self.pb['value'] = per
+        self.vl['text'] = 'Moving: %d/%d' % (0, self.steps)
+
     def step(self, val):
         per = val / self.steps * 100
         self.pb['value'] = per

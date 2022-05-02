@@ -152,6 +152,8 @@ def run_calibration():
 def step(s):
     if s == -1:
         scan_popup.error("ERROR:\nArduino not connected.\nConnect arduino and try again.")
+    elif s == -2:
+        scan_popup.reset()
     else:
         scan_popup.step(s)
 

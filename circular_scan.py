@@ -136,8 +136,6 @@ class CircularScan(object):
             sleep(0.2)
             if self._step_callback is not None:
                 self._step_callback(i+1)
-        sleep(5)
-        print('moving files...')
         self._step_callback(-2)
         self.android.move_files(self._step_callback)
         print('moving files complete.')
