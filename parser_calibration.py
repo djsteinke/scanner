@@ -2,6 +2,8 @@ import math
 import cv2
 from parser_roi import get_roi_by_img
 import parser_util
+import json
+import os
 
 
 grid_size = 15.0    # mm of grid squares
@@ -9,6 +11,13 @@ nx = 6              # nx: number of grids in x axis
 ny = 9              # ny: number of grids in y axis
 c_offset_x = -15.0
 c_offset_y = 3654
+
+pattern_off = 60.0
+pattern_w = 2.25
+platform_w = 4
+
+yf = 62.25
+yr = -57.75
 
 
 def get_p2p_dist(p):
@@ -56,23 +65,36 @@ def get_scalar(img):
 
 
 class Calibration(object):
-    def __init__(self, scan_dir):
+    def __init__(self, path):
         self._scalar = [0.0, 0.0]       # Front, Back
         self.scalar_x = [0.0, 0.0]
         self.scalar_y = [0.0, 0.0]
-        self.b0 = cv2.imread(f'{scan_dir}\\calibration_b0.jpg')
-        self.b1 = cv2.imread(f'{scan_dir}\\calibration_b1.jpg')
-        self.b2 = cv2.imread(f'{scan_dir}\\calibration_b2.jpg')
-        self.f0 = cv2.imread(f'{scan_dir}\\calibration_f0.jpg')
-        self.f1 = cv2.imread(f'{scan_dir}\\calibration_f1.jpg')
-        self.f2 = cv2.imread(f'{scan_dir}\\calibration_f2.jpg')
+        self.b0 = cv2.imread(f'{path}\\calibration_B0.jpg')
+        self.b1 = cv2.imread(f'{path}\\calibration_B1.jpg')
+        self.b2 = cv2.imread(f'{path}\\calibration_B2.jpg')
+        self.f0 = cv2.imread(f'{path}\\calibration_F0.jpg')
+        self.f1 = cv2.imread(f'{path}\\calibration_F1.jpg')
+        self.f2 = cv2.imread(f'{path}\\calibration_F2.jpg')
+        self.l1a = [0.0, 0.0]
+        self.l2a = [0.0, 0.0]
         self.ll_c = []
         self.rl_c = []
-        self.get_scalar()
-        self.get_c_tmp()
+        self.path = path
+        self.load()
+
+    def load(self):
+        file = self.path + "\\calibration.json"
+        if os.path.isfile(file):
+            f = open(file, 'r')
+            cal = json.load(f)
+            self._scalar = [cal['scalar'][0], cal['scalar'][1]]
+            self.l1a = [cal['l1a'][0], cal['l1a'][1]]
+            self.l2a = [cal['l2a'][0], cal['l2a'][1]]
+        else:
+            self.get_scalar()
+            self.get_c()
 
     def get_scalar(self):
-        print('get_scalar()')
         s, x, y = get_scalar(self.b0)
         self._scalar[0] = s
         self.scalar_x[0] = x
@@ -82,53 +104,61 @@ class Calibration(object):
         self.scalar_x[1] = x
         self.scalar_y[1] = y
 
-    def get_c_tmp(self):
-        print('get_c_tmp()')
-        rx, ry = get_roi_by_img(self.line, 1)
-        roi = [rx, ry]
-        xy = parser_util.points_min_cols(self.line, c=True, roi=roi)
-        xy_l = len(xy) - 1
-        print(xy)
-        p = [[xy[0][0], xy[0][1]], [xy[xy_l][0], xy[xy_l][1]]]
-        if p[1][0] - p[0][0] == 0:
-            m = 1
-        else:
-            m = (p[1][1] - p[0][1]) * 1.0 / ((p[1][0] - p[0][0]) * 1.0)
-        b = p[0][1] - (m * p[0][0])
-        self.rl_c.append(m)
-        self.rl_c.append(b)
-        self.ll_c.append(m)
-        self.ll_c.append(b)
-
     def get_c(self):
         print('get_c()')
-        roi = []
-        if self.rl is not None:
-            # get x for y top, get x for y bot
-            rx, ry = get_roi_by_img(self.rl, 1)
-            roi = [rx, ry]
-            img = cv2.subtract(self.rl, self.line)
-            xy = parser_util.points_max_cols(img, c=True, roi=roi)
-            xy_l = len(xy) - 1
-            p = [[xy[0][0], xy[0][1]], [xy[xy_l][0], xy[xy_l][1]]]
-            m = (p[1][1] - p[0][1]) * 1.0 / ((p[1][0] - p[0][0]) * 1.0)
-            b = p[0][1] - (m * p[0][0])
-            self.rl_c.append(m)
-            self.rl_c.append(b)
+        # get front r/l
+        rx, ry = get_roi_by_img(self.f0, 1)
+        roi = [rx, ry]
+        img = cv2.subtract(self.f2, self.f0)
+        xy = parser_util.points_max_cols(img, c=True, roi=roi)
+        xy_l = len(xy) - 1
+        f2x = xy[xy_l][0]
+        print('f2', xy[xy_l][0], xy[xy_l][1])
+        img = cv2.subtract(self.f1, self.f0)
+        xy = parser_util.points_max_cols(img, c=True, roi=roi)
+        xy_l = len(xy) - 1
+        f1x = xy[xy_l][0]
+        print('f1', xy[xy_l][0], xy[xy_l][1])
 
-        if self.ll is not None:
-            # use RL ROI, get x for y top, get x for y bot
-            if len(roi) == 0:
-                rx, ry = get_roi_by_img(self.ll, 1)
-                roi = [rx, ry]
-            img = cv2.subtract(self.ll, self.line)
-            xy = parser_util.points_max_cols(img, c=True, roi=roi)
-            xy_l = len(xy) - 1
-            p = [[xy[0][0], xy[0][1]], [xy[xy_l][0], xy[xy_l][1]]]
-            m = (p[1][1] - p[0][1]) * 1.0 / ((p[1][0] - p[0][0]) * 1.0)
-            b = p[0][1] - (m * p[0][0])
-            self.ll_c.append(m)
-            self.ll_c.append(b)
+        # get back r/l
+        rx, ry = get_roi_by_img(self.b0, 1)
+        roi = [rx, ry]
+        img = cv2.subtract(self.b2, self.b0)
+        xy = parser_util.points_max_cols(img, c=True, roi=roi)
+        xy_l = len(xy) - 1
+        b2x = xy[xy_l][0]
+        print('b2', xy[xy_l][0], xy[xy_l][1])
+        img = cv2.subtract(self.b1, self.b0)
+        xy = parser_util.points_max_cols(img, c=True, roi=roi)
+        xy_l = len(xy) - 1
+        b1x = xy[xy_l][0]
+        print('b1', xy[xy_l][0], xy[xy_l][1])
+
+        h, w, _ = img.shape
+
+        c = w/2 + c_offset_x
+        rad = math.atan((b1x - c)/self.scalar[0]/yr)
+        deg = math.degrees(rad)
+        self.l1a[0] = deg
+        print('b1', deg)
+        rad = math.atan((b2x - c)*1.0/self.scalar[0]/yr)
+        deg = math.degrees(rad)
+        self.l2a[0] = deg
+        print('b2', deg)
+        rad = math.atan((f1x - c)*1.0/self.scalar[1]/yf)
+        deg = math.degrees(rad)
+        self.l1a[1] = deg
+        print('f1', deg)
+        rad = math.atan((f2x - c)*1.0/self.scalar[1]/yf)
+        deg = math.degrees(rad)
+        self.l2a[1] = deg
+        print('f2', deg)
+        cal = {'scalar': self.scalar, 'l1a': self.l1a, 'l2a': self.l2a}
+        print(cal)
+        d_path = self.path + "\\calibration.json"
+        f = open(d_path, 'w')
+        f.write(json.dumps(cal))
+        f.close()
 
     def get_center_x(self, right, y):
         if right:

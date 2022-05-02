@@ -1,6 +1,6 @@
 import cv2
 from os import getcwd
-from parser_calibration import get_p2p_dist
+from parser_calibration import get_p2p_dist, Calibration
 
 
 grid_size = 15.0
@@ -28,9 +28,9 @@ fr = cv2.imread(scan_path + "calibration_F0.jpg")
 #cn = cv2.imread(scan_path + "linear_calibration_C0.jpg")
 rr = cv2.imread(scan_path + "calibration_B0.jpg")
 
-fr_s = get_scalar(fr)
+#fr_s = get_scalar(fr)
 #cn_s = get_scalar(cn)
-rr_s = get_scalar(rr)
+#rr_s = get_scalar(rr)
 
 #print(fr_s - cn_s)
 #print(cn_s - rr_s)
@@ -69,10 +69,10 @@ for a in range(0, h, 50):
     for b in range(0, w, r):
         f2[a, b, 0] = 255
 
-cv2.imshow('Front', f2)
-cv2.waitKey()
+#cv2.imshow('Front', f2)
+#cv2.waitKey()
 
-
+calibration = Calibration(getcwd() + "\\calibration")
 """
 13.65 @ 62.25
 9.83 @ -57.75

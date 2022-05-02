@@ -109,11 +109,12 @@ def scan_clicked():
     global scan_popup, scan
     scan_steps = int(steps_scan.get('1.0', 'end-1c'))
     degrees = float(scan_degrees.get('1.0', 'end-1c'))
-    scan_popup = ScanPopup(root, scan_steps)
-    scan_popup.open()
     ll = use_left_laser.get() == 1
     rl = use_right_laser.get() == 1
     color = use_color.get() == 1
+    pics = use_left_laser.get() + use_right_laser.get() + use_color.get()
+    scan_popup = ScanPopup(root, scan_steps, pics)
+    scan_popup.open()
     scan = CircularScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_started, sc=step,
                         degrees=degrees, rl=rl, ll=ll, color=color)
     Timer(0.1, scan.start).start()
@@ -152,8 +153,6 @@ def run_calibration():
 def step(s):
     if s == -1:
         scan_popup.error("ERROR:\nArduino not connected.\nConnect arduino and try again.")
-    elif s == -2:
-        scan_popup.step(0)
     else:
         scan_popup.step(s)
 
