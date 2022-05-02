@@ -221,7 +221,7 @@ class Calibration(object):
         calc_x = radius * math.sin(angle) / scale
         calc_y = radius * math.cos(angle) / scale
 
-        print(orig_x, px, scale, alpha, calc_x, calc_y, calc_z)
+        #print(orig_x, px, scale, alpha, calc_x, calc_y, calc_z)
 
         return calc_x, calc_y, calc_z
 
