@@ -74,7 +74,7 @@ def points_triangulate(points, offset, color=None, right=True):
     px, py = points
 
     bgr = [255, 0, 0]
-    if color is not None and right:
+    if color is not None:
         bgr = color[round(py), round(px)]
 
     pz = roi_y[1]-py
