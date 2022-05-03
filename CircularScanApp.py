@@ -128,26 +128,44 @@ def calibration_clicked():
     Timer(0.1, run_calibration).start()
 
 
-def run_calibration():
+def complete_calibration():
+    run_calibration(True)
+
+
+def run_calibration(complete=False):
     d = getcwd() + "\\calibration"
-    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F0'))
-    arduino.send_msg_new(2)
-    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F1'))
-    arduino.send_msg_new(1)
-    arduino.send_msg_new(4)
-    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F2'))
-    arduino.send_msg_new(3)
-    motor_steps = int(200.0 * 16.0 * 180.0 / 360.0)
-    arduino.send_msg_new(6, 1, motor_steps)         # turn platform
-    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B0'))
-    arduino.send_msg_new(2)
-    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B1'))
-    arduino.send_msg_new(1)
-    arduino.send_msg_new(4)
-    android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B2'))
-    arduino.send_msg_new(3)
-    sleep(5)
-    android.move_files()
+    if not complete:
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F0'))
+        arduino.send_msg_new(2)
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F1'))
+        arduino.send_msg_new(1)
+        arduino.send_msg_new(4)
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F2'))
+        arduino.send_msg_new(3)
+        motor_steps = int(200.0 * 16.0 * 180.0 / 360.0)
+        arduino.send_msg_new(6, 1, motor_steps)         # turn platform
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B0'))
+        arduino.send_msg_new(2)
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B1'))
+        arduino.send_msg_new(1)
+        arduino.send_msg_new(4)
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B2'))
+        arduino.send_msg_new(3)
+        tl = Toplevel()
+        cb = Button(tl, text="Continue", command=complete_calibration, width=15)
+        tl.geometry('200x100+100+450')
+        cb.pack(pady=(40, 0))
+        tl.grab_set()
+    else:
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'C0'))
+        arduino.send_msg_new(2)
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'C1'))
+        arduino.send_msg_new(1)
+        arduino.send_msg_new(4)
+        android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'C2'))
+        arduino.send_msg_new(3)
+        sleep(1)
+        android.move_files()
 
 
 def step(s):

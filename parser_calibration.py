@@ -20,22 +20,24 @@ def get_p2p_dist(p):
     avg_r = []
     avg_c = []
     for y in range(0, ny):
-        for x in range(0, nx):
-            x0 = p[y*x+x, 0, 0]
-            y0 = p[y*x+x, 0, 1]
-            x1 = p[y*x+x+1, 0, 0]
-            y1 = p[y*x+x+1, 0, 1]
+        for x in range(0, nx-1):
+            x0 = p[y*nx+x, 0, 0]
+            y0 = p[y*nx+x, 0, 1]
+            x1 = p[y*nx+x+1, 0, 0]
+            y1 = p[y*nx+x+1, 0, 1]
             d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
+            # print('y x d', y, x, d)
             avg_r.append(d)
     for x in range(0, nx):
-        for y in range(0, ny):
-            x0 = p[y*x+x, 0, 0]
-            y0 = p[y*x+x, 0, 1]
-            x1 = p[y*x+x+1, 0, 0]
-            y1 = p[y*x+x+1, 0, 1]
+        for y in range(0, ny-1):
+            x0 = p[x+y*nx, 0, 0]
+            y0 = p[x+y*nx, 0, 1]
+            x1 = p[x+y*nx+nx, 0, 0]
+            y1 = p[x+y*nx+nx, 0, 1]
             d = math.sqrt(math.pow((x1-x0), 2) + math.pow((y1-y0), 2))
+            # print('x y d', x, y, d)
             avg_c.append(d)
-
+    print('length', len(avg_r), len(avg_c))
     avg_x = sum(avg_r)/len(avg_r)
     avg_y = sum(avg_c)/len(avg_c)
     print('avg_x[%0.2f], avg_y[%0.2f]' % (avg_x, avg_y))
@@ -93,7 +95,9 @@ class Calibration(object):
         if os.path.isfile(file):
             f = open(file, 'r')
             cal = json.load(f)
-            self._scalar = [cal['scalar'][0], cal['scalar'][1]]
+            self._scalar = cal['scalar']
+            self.scalar_x = cal['sx']
+            self.scalar_y = cal['sy']
             self.la = cal['la']
             self.lc = cal['lc']
             self.lx = cal['lx']
@@ -185,7 +189,7 @@ class Calibration(object):
         deg = math.degrees(rad)
         self.la[1][1] = deg
         print('f2', deg)
-        cal = {'scalar': self.scalar, 'la': self.la, 'lc': self.lc, 'lx': self.lx}
+        cal = {'scalar': self.scalar, 'sx': self.scalar_x, 'sy': self.scalar_y, 'la': self.la, 'lc': self.lc, 'lx': self.lx}
         print(cal)
         d_path = self.path + "\\calibration.json"
         f = open(d_path, 'w')
