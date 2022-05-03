@@ -125,16 +125,19 @@ def scan_started():
 
 
 def calibration_clicked():
+    if tl is not None:
+        tl.destroy()
     Timer(0.1, run_calibration).start()
 
 
-def complete_calibration():
-    run_calibration(True)
+tl = None
+cal_cnt = 0
 
 
-def run_calibration(complete=False):
+def run_calibration():
+    global tl, cal_cnt
     d = getcwd() + "\\calibration"
-    if not complete:
+    if cal_cnt == 0:
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F0'))
         arduino.send_msg_new(2)
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F1'))
@@ -144,6 +147,12 @@ def run_calibration(complete=False):
         arduino.send_msg_new(3)
         motor_steps = int(200.0 * 16.0 * 180.0 / 360.0)
         arduino.send_msg_new(6, 1, motor_steps)         # turn platform
+        tl = Toplevel()
+        cb = Button(tl, text="Continue", command=calibration_clicked, width=15)
+        tl.geometry('200x100+100+450')
+        cb.pack(pady=(40, 0))
+        tl.grab_set()
+    elif cal_cnt == 1:
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B0'))
         arduino.send_msg_new(2)
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B1'))
@@ -152,7 +161,7 @@ def run_calibration(complete=False):
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B2'))
         arduino.send_msg_new(3)
         tl = Toplevel()
-        cb = Button(tl, text="Continue", command=complete_calibration, width=15)
+        cb = Button(tl, text="Continue", command=calibration_clicked, width=15)
         tl.geometry('200x100+100+450')
         cb.pack(pady=(40, 0))
         tl.grab_set()
@@ -166,6 +175,7 @@ def run_calibration(complete=False):
         arduino.send_msg_new(3)
         sleep(1)
         android.move_files()
+    cal_cnt += 1
 
 
 def step(s):

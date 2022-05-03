@@ -73,8 +73,8 @@ def points_triangulate(points, offset, color=None, right=True):
         cam_degree = 15
     px, py = points
 
-    bgr = [0, 0, 0]
-    if color is not None:
+    bgr = [255, 0, 0]
+    if color is not None and right:
         bgr = color[round(py), round(px)]
 
     pz = roi_y[1]-py
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_args()
     t = args.type
 
-    scan_dir = '20220502152857'
+    scan_dir = '20220503140408'
     scan_path = getcwd() + "\\scans\\" + scan_dir
 
     details_path = f'{scan_path}\\details.json'
