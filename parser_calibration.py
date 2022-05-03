@@ -6,7 +6,7 @@ import json
 import os
 
 
-grid_size = 15.0    # mm of grid squares
+grid_size = 13.0    # mm of grid squares
 nx = 6              # nx: number of grids in x axis
 ny = 9              # ny: number of grids in y axis
 c_offset_x = -28.0
@@ -210,9 +210,12 @@ class Calibration(object):
         orig_x = px
         l = 1 if right else 0
         offset += 15 if not right else 0
-        p = [[self.lx[0][l], self.scalar[0]], [self.lx[1][l], self.scalar[1]]]
+        p = [[self.lx[0][l], self.scalar_x[0]], [self.lx[1][l], self.scalar_x[1]]]
         m, b = get_slope(p)
-        scale = m*px + b
+        scale_x = m*px + b
+        p = [[self.lx[0][l], self.scalar_y[0]], [self.lx[1][l], self.scalar_y[1]]]
+        m, b = get_slope(p)
+        scale_y = m*px + b
         p = [[self.lx[0][l], self.la[0][l]], [self.lx[1][l], self.la[1][l]]]
         m, b = get_slope(p)
         alpha = m*px + b
@@ -222,9 +225,9 @@ class Calibration(object):
         px -= c_offset_x
         angle = math.radians(offset)
         radius = px / math.sin(cam_angle)
-        calc_z = py / scale
-        calc_x = radius * math.sin(angle) / scale
-        calc_y = radius * math.cos(angle) / scale
+        calc_z = py / scale_y
+        calc_x = radius * math.sin(angle) / scale_x
+        calc_y = radius * math.cos(angle) / scale_x
 
         #print(orig_x, px, scale, alpha, calc_x, calc_y, calc_z)
 
