@@ -219,6 +219,7 @@ class Calibration(object):
         cam_angle = math.radians(alpha)
 
         px -= self.lc[l]
+        px -= c_offset_x
         angle = math.radians(offset)
         radius = px / math.sin(cam_angle)
         calc_z = py / scale
