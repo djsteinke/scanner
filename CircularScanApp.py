@@ -130,7 +130,8 @@ def camera_calibration_clicked():
 
 def run_camera_calibration():
     path = getcwd() + "\\calibration"
-    calibration = Calibration(android=android, path=path)
+    calibration = Calibration(arduino=arduino, android=android, path=path)
+    calibration.start()
 
 
 def calibration_clicked():

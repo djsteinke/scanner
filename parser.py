@@ -191,7 +191,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_args()
     t = args.type
 
-    scan_dir = '20220503140408'
+    scan_dir = '20220503160857'
     scan_path = getcwd() + "\\scans\\" + scan_dir
 
     details_path = f'{scan_path}\\details.json'
