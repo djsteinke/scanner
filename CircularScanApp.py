@@ -124,6 +124,15 @@ def scan_started():
     scan_popup.tl.grab_set()
 
 
+def camera_calibration_clicked():
+    Timer(0.1, run_camera_calibration).start()
+
+
+def run_camera_calibration():
+    path = getcwd() + "\\calibration"
+    calibration = Calibration(android=android, path=path)
+
+
 def calibration_clicked():
     if tl is not None:
         tl.destroy()
@@ -365,16 +374,20 @@ if __name__ == '__main__':
     port_value.insert('1.0', '5555')
     port_value.grid(column=1, row=mn_row, padx=(10, 10), sticky=W)
     mn_row += 1
-    connect_android = Button(mn, text="Connect", command=connect_android, width=10)
-    connect_android.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=3)
+    connect_android = Button(mn, text="Connect", command=connect_android, font=font_bold, width=10)
+    connect_android.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(3, 10))
 
     mn_row += 1
-    but_start = Button(mn, text="Calibration", command=calibration_clicked, font=font_bold, width=10)
-    but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=(20, 0))
 
+    fr = Frame(mn)
+    but_start = Button(fr, text="Cal. Scalar", command=calibration_clicked, font=font_bold, width=10)
+    but_start.grid(column=0, columnspan=1, row=0, padx=(0, 10), pady=(0, 0), sticky=EW)
+    but_start = Button(fr, text="Cal. Camera", command=camera_calibration_clicked, font=font_bold, width=10)
+    but_start.grid(column=1, columnspan=1, row=0, padx=(10, 0), pady=(0, 0), sticky=EW)
+    fr.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(7, 0))
     mn_row += 1
     but_start = Button(mn, text="Start Scan", command=scan_clicked, font=font_bold, width=10)
-    but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 10), pady=(20, 0))
+    but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(10, 0))
 
     mn_row += 1
     mn.pack(padx=10, pady=(0, 10))
