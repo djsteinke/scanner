@@ -20,11 +20,16 @@ def det_camera_matrix():
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     path = os.getcwd() + "\\calibration"
-    images = glob.glob("%s/calibration_00*" % path.rstrip('/'))
+    images = glob.glob("%s/calibration_[F,C,B]*0.jpg" % path.rstrip('/'))
     images.sort()
 
+    r_h = 693
+    r_w = 520
+
     for f_name in images:
+        print('chessboard', f_name)
         img = cv2.imread(f_name)
+        img = cv2.resize(img, (r_w, r_h), interpolation=cv2.INTER_AREA)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # Find the chess board corners
@@ -44,22 +49,29 @@ def det_camera_matrix():
 
     cv2.destroyAllWindows()
 
-    img = cv2.imread(images[5])
+    img = cv2.imread(images[0])
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.resize(gray, (r_w, r_h), interpolation=cv2.INTER_AREA)
+    print('gray defined')
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    print('calibrateCamera complete')
 
-    img_path = os.getcwd() + "\\scans\\20220504084303\\right_0091.jpg"
+    img_path = os.getcwd() + "\\scans\\20220503160857\\right_0099.jpg"
     img = cv2.imread(img_path)
-    h, w = img.shape[:2]
-    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+    img = cv2.resize(img, (r_w, r_h), interpolation=cv2.INTER_AREA)
+    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (r_w, r_h), 1, (r_w, r_h))
+    print('getOptimalNewCameraMatrix complete')
     # undistort
     dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
-
+    print('undistort complete')
     # crop the image
     x, y, w, h = roi
-    dst = dst[y:y + h, x:x + w]
+    #dst = dst[y:y + h, x:x + w]
+    print('crop complete')
+    diff = cv2.subtract(img, dst)
     cv2.imshow('undistorted', dst)
     cv2.imshow('original', img)
+    cv2.imshow('diff', diff)
     cv2.waitKey()
 
 

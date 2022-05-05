@@ -9,8 +9,12 @@ import os
 grid_size = 13.0    # mm of grid squares
 nx = 6              # nx: number of grids in x axis
 ny = 9              # ny: number of grids in y axis
-c_offset_x = (1600.0 - 3120.0/2.0)
+c_offset_x_top = (1540.0 - 3120.0/2.0)  # 900
+c_offset_x = (1520.0 - 3120.0/2.0)   # 3300
 c_offset_y = 3645
+
+c_offset_top = [-20, 900]
+c_offset_bottom = [-40, 3300]
 
 yf = 62.245
 yr = -57.625
@@ -221,8 +225,10 @@ class Calibration(object):
         alpha = m*px + b
         cam_angle = math.radians(alpha)
 
+        m, b = get_slope([c_offset_top, c_offset_bottom])
+        c_offset = (py - b) / m
         px -= self.lc[l]
-        px -= c_offset_x
+        px -= c_offset
         angle = math.radians(offset)
         radius = px / math.sin(cam_angle)
         calc_z = py / scale_y
