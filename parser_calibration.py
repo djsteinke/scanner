@@ -9,8 +9,8 @@ import os
 grid_size = 13.0    # mm of grid squares
 nx = 6              # nx: number of grids in x axis
 ny = 9              # ny: number of grids in y axis
-c_offset_x = -28.0
-c_offset_y = 3654
+c_offset_x = (1600.0 - 3120.0/2.0)
+c_offset_y = 3645
 
 yf = 62.245
 yr = -57.625
