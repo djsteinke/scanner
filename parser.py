@@ -2,6 +2,7 @@ import optparse
 import glob
 import model.pointset as ps
 import math
+import numpy as np
 from os import getcwd
 from parser_calibration import Calibration
 from json import load
@@ -138,6 +139,33 @@ def points_process_images(images, color=None, right=True):
     return points
 
 
+def single():
+    global calibration, roi_x, roi_y
+    print("main()")
+    pic_num = 72
+    right = scan_path + "\\right_%04d.jpg" % pic_num
+    color = scan_path + "\\color_%04d.jpg" % pic_num
+    r_pic = cv2.imread(right)
+    c_pic = cv2.imread(color)
+    d_pic = cv2.subtract(r_pic, c_pic)
+    tmin = 60
+    step = [calibration.scalar[0], float(details['dps']), ratio]
+    xy = points_max_cols(d_pic, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
+    h, w, _ = d_pic.shape
+    new = np.zeros((h, w, 3), np.uint8)
+    for x, y in xy:
+        new[x, y, 2] = 255
+    w_tmp = w/6
+    h_tmp = h/6
+    new = cv2.resize(new, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
+    r_pic = cv2.resize(r_pic, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
+    d_pic = cv2.resize(d_pic, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
+
+    cv2.imshow('orig', r_pic)
+    cv2.imshow('diff', d_pic)
+    cv2.imshow('points', new)
+
+
 def main():
     global calibration, roi_x, roi_y
     print("main()")
@@ -208,6 +236,5 @@ if __name__ == "__main__":
 
     if t is None:
         main()
-    elif t == '':
-        calibration = None
-        tmp = 1
+    elif t == 'single':
+        single()
