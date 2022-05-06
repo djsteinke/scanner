@@ -49,7 +49,7 @@ def main(p=None):
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220506080359"
+        dataname = "20220505145503"
         xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
         #xyz = open(input_path + '\\scans\\' + '20220429_063234' + ".xyz", mode="r")
         points = []
