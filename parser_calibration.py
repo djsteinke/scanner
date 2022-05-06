@@ -244,9 +244,9 @@ class Calibration(object):
         # m, b = get_slope(p)
         # scale_y = m*px + b
         scale_y = scale_y_slope[0][l] * px + scale_y_slope[1][l]
-        p = [[self.lx[0][l], self.la[0][l]], [self.lx[1][l], self.la[1][l]]]
-        m, b = get_slope(p)
-        alpha = m*px + b
+        #p = [[self.lx[0][l], self.la[0][l]], [self.lx[1][l], self.la[1][l]]]
+        #m, b = get_slope(p)
+        #alpha = m*px + b
         alpha = alpha_slope[0][l] * px + alpha_slope[1][l]
         if l == 0:
             # p = [[self.lx[0][1], self.la[0][1]], [self.lx[1][1], self.la[1][1]]]
@@ -286,8 +286,8 @@ class Calibration(object):
         calc_y = (calc_y*scale_x + cx - self.lc[l] - c_offset) / scale_x
         pos = -1.0 if px < 0 else 1.0
         radius = math.sqrt(math.pow(calc_y, 2) + math.pow(calc_x, 2)) * pos
-        calc_x = radius * math.sin(angle)
-        calc_y = radius * math.cos(angle)
+        calc_x = radius * math.cos(angle)
+        calc_y = radius * math.sin(angle)
         a_z = math.atan(calc_z/x)
         calc_z = r_cam * math.sin(a_z)
 
