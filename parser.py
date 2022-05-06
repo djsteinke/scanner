@@ -91,7 +91,7 @@ def points_triangulate(points, offset, color=None, right=True):
         calc_x,
         calc_y,
         calc_z,
-        (bgr[2]*1.0)/255.0, (bgr[1]*1.0)/255.0, (bgr[0]*1.0)/255.0,
+        bgr[2], bgr[1], bgr[0],
         0.0, 0.0, 0.0
     ]
 
@@ -128,7 +128,7 @@ def points_process_images(images, color=None, right=True):
 
         offset = pic_num * float(details['dps'])
         xyz = [points_triangulate((x, y), offset, color=c, right=right) for x, y in xy]
-        xyz = calc_normals(xyz, offset)
+        #xyz = calc_normals(xyz, offset)
         xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
         points.extend(xyz)
 
