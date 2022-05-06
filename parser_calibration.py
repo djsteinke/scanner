@@ -258,7 +258,7 @@ class Calibration(object):
 
         cx = 3120.0/2.0
         cy = 4160.0/2.0
-        cam_x = (cx - px) / scale_y
+        cam_x = (px - cx) / scale_y
         pz = cy - py
         calc_z = pz / scale_y
         r_cam = 463.0
@@ -290,6 +290,9 @@ class Calibration(object):
         calc_y = radius * math.cos(angle)
         a_z = math.atan(calc_z/x)
         calc_z = r_cam * math.sin(a_z)
+
+        scale_px = px / scale_x
+        print(round(cam_x, 1), round(scale_px, 1), round(calc_x, 1), round(calc_y, 1))
 
         return calc_x, calc_y, calc_z
 

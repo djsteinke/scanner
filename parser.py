@@ -163,7 +163,7 @@ def single():
     xyz = [points_triangulate((x, y), offset, color=c_pic, right=True) for x, y in xy]
     a_xyz = ['%d %d' % (x, y) for x, y, z, a, b, c, d, e, f in xyz]
     str_xyz = str.join('\n', a_xyz)
-    print(str_xyz)
+    #print(str_xyz)
 
     points = []
     xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
@@ -185,10 +185,10 @@ def single():
         r_pic[y, x, 1] = 255
     #new = cv2.resize(new, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
 
-    cv2.imshow('orig', r_pic)
-    cv2.imshow('diff', d_pic)
-    cv2.imshow('points', new)
-    cv2.waitKey()
+    #cv2.imshow('orig', r_pic)
+    #cv2.imshow('diff', d_pic)
+    #cv2.imshow('points', new)
+    #cv2.waitKey()
 
 
 def main():
