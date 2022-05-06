@@ -258,7 +258,7 @@ class Calibration(object):
 
         cx = 3120.0/2.0
         cy = 4160.0/2.0
-        cam_x = (px - cx) / scale_y
+        cam_x = (px - cx) / scale_x
         pz = cy - py
         calc_z = pz / scale_y
         r_cam = 463.0
