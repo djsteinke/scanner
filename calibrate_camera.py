@@ -80,7 +80,6 @@ def undistort():
     cv2.imwrite('calibresult.png', dst)
 
 
-
 def video_stream():
     global out, printed
     # Arrays to store object points and image points from all the images.

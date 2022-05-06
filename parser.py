@@ -78,11 +78,10 @@ def points_triangulate(points, offset, color=None, right=True):
     if color is not None:
         bgr = color[round(py), round(px)]
 
-    pz = roi_y[1]-py
-
     if details['type'] == 'circular':
-        calc_x, calc_y, calc_z = calibration.get_scaled_xyz(right, px, pz, offset)
+        calc_x, calc_y, calc_z = calibration.get_scaled_xyz(px, py, right, offset)
     else:
+        pz = roi_y[1]-py
         cam_angle = math.radians(cam_degree)
         calc_x = (px / math.tan(cam_angle)) / calibration.scalar
         calc_y = (px - offset) / calibration.scalar
@@ -107,14 +106,15 @@ def points_process_images(images, color=None, right=True):
         else:
             pic_num = path.split('left_')
         pic_num = int(pic_num[1].split('.')[0])
-        print("II: %03d/%03d processing %s" % (pic_num+1, s, path))
+        side = "RIGHT" if right else "LEFT"
+        print("%s: %03d/%03d" % (side, pic_num+1, s))
         img = cv2.imread(path)
         tmin = 200
         c = None
         if color is not None:
             c = cv2.imread(color[i])
             img = cv2.subtract(img, c)
-            tmin = 60
+            tmin = 30
         h, w, _ = img.shape
         if ratio > 1:
             h_tmp = int(h/ratio)
@@ -126,7 +126,7 @@ def points_process_images(images, color=None, right=True):
         xy = points_max_cols(img, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
         xy = remove_noise(xy, w)
 
-        offset = pic_num * float(details['dps'])
+        offset = -pic_num * float(details['dps'])
         xyz = [points_triangulate((x, y), offset, color=c, right=right) for x, y in xy]
         xyz = calc_normals(xyz, offset)
         xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
@@ -141,29 +141,46 @@ def points_process_images(images, color=None, right=True):
 
 def single():
     global calibration, roi_x, roi_y
-    print("main()")
-    pic_num = 72
+    print("single()")
+    pic_num = 98
     right = scan_path + "\\right_%04d.jpg" % pic_num
     color = scan_path + "\\color_%04d.jpg" % pic_num
     r_pic = cv2.imread(right)
     c_pic = cv2.imread(color)
     d_pic = cv2.subtract(r_pic, c_pic)
+
+    roi_x = [1134, 2460]
+    roi_y = [666, 3408]
+    #roi_x, roi_y = get_roi_by_path(right, ratio)
     tmin = 60
     step = [calibration.scalar[0], float(details['dps']), ratio]
     xy = points_max_cols(d_pic, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
-    h, w, _ = d_pic.shape
-    new = np.zeros((h, w, 3), np.uint8)
-    for x, y in xy:
-        new[x, y, 2] = 255
-    w_tmp = w/6
-    h_tmp = h/6
-    new = cv2.resize(new, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
+    a_xy = ['%d %d' % (x, y) for x, y in xy]
+    str_xy = str.join('\n', a_xy)
+    print(str_xy)
+
+    offset = pic_num * float(details['dps'])
+    xyz = [points_triangulate((x, y), offset, color=c_pic, right=True) for x, y in xy]
+
+    h, w, _ = r_pic.shape
+    h_tmp = int(h / 6)
+    w_tmp = int(w / 6)
+    new = np.zeros((h_tmp, w_tmp, 3), np.uint8)
+    print('xy length', len(xy))
     r_pic = cv2.resize(r_pic, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
     d_pic = cv2.resize(d_pic, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
+    for x, y in xy:
+        x = int(x/6)
+        y = int(y/6)
+        new[y, x, 2] = 255
+        d_pic[y, x, 0] = 255
+        r_pic[y, x, 1] = 255
+    #new = cv2.resize(new, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
 
     cv2.imshow('orig', r_pic)
     cv2.imshow('diff', d_pic)
     cv2.imshow('points', new)
+    cv2.waitKey()
 
 
 def main():
@@ -219,7 +236,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_args()
     t = args.type
 
-    scan_dir = '20220505094528'
+    scan_dir = '20220506080359'
     scan_path = getcwd() + "\\scans\\" + scan_dir
 
     details_path = f'{scan_path}\\details.json'

@@ -206,14 +206,15 @@ class Calibration(object):
         else:
             return (y - self.ll_c[1]) / self.ll_c[0]
 
-    def get_scaled_xyz(self, right, px, py, offset=0):
+    def get_scaled_xyz(self, px, py, right, offset=0):
         # get scale at x
         # get alpha at x
         # use scale to get x
         # use x and alpha for corrected xy
+        px = px * 1.0
+        py = py * 1.0
         orig_x = px
         l = 1 if right else 0
-        offset += 15 if not right else 0
         p = [[self.lx[0][l], self.scalar_x[0]], [self.lx[1][l], self.scalar_x[1]]]
         m, b = get_slope(p)
         scale_x = m*px + b
@@ -223,17 +224,35 @@ class Calibration(object):
         p = [[self.lx[0][l], self.la[0][l]], [self.lx[1][l], self.la[1][l]]]
         m, b = get_slope(p)
         alpha = m*px + b
+        if l == 0:
+            p = [[self.lx[0][1], self.la[0][1]], [self.lx[1][1], self.la[1][1]]]
+            m, b = get_slope(p)
+            alpha_r = m * px + b
+            offset += (alpha_r - alpha)
         cam_angle = math.radians(alpha)
 
+        cy = 4160.0/2.0
+        pz = cy - py
+        calc_z = pz / scale_y
+        r_cam = 463.0
+
+        #pz = py - c_offset_bottom[1]
         m, b = get_slope([c_offset_top, c_offset_bottom])
         c_offset = (py - b) / m
         px -= self.lc[l]
         px -= c_offset
         angle = math.radians(offset)
+        zx = px / math.tan(cam_angle) / scale_x
         radius = px / math.sin(cam_angle)
-        calc_z = py / scale_y
         calc_x = radius * math.sin(angle) / scale_x
         calc_y = radius * math.cos(angle) / scale_x
+        x = r_cam - zx
+        a = math.atan(calc_z/x)
+        calc_z = r_cam * math.sin(a)
+        #calc_z = pz / scale_y
+
+        #if 1500 < py < 1522:
+        #    print(round(offset, 1), round(radius, 1), round(orig_x, 1), py, round(px, 1), round(scale_x, 2))
 
         #print(orig_x, px, scale, alpha, calc_x, calc_y, calc_z)
 

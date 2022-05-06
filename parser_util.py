@@ -50,7 +50,6 @@ def points_min_cols(img, threshold=(0, 60), c=False, roi=None, step=None):
 
         if mv > 0:
             xy.append((mx, i))
-
     return xy
 
 

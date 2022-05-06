@@ -484,7 +484,7 @@ if __name__ == "__main__":
     #scaler = 10.1 #(px/mm)
     scaler = 258.87/20.0
     ratio = 1
-    main()
+    #main()
     #linear_calibration_process()
     #process_calibration_pics()
-    #tmp_pic()
+    tmp_pic()
