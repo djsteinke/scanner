@@ -244,12 +244,19 @@ class Calibration(object):
         angle = math.radians(offset)
         zx = px / math.tan(cam_angle) / scale_x
         radius = px / math.sin(cam_angle)
+        calc_x = zx
+        """
         alpha_p = math.atan(px / (r_cam - zx))
-        calc_y = r_cam * math.sin(alpha_p)
-        calc_x = r_cam - (r_cam * math.cos(alpha_p))
+        calc_x = r_cam * math.sin(alpha_p)
+        calc_y = r_cam - (r_cam * math.cos(alpha_p))
+        """
         #calc_x = radius * math.sin(angle) / scale_x
         #calc_y = radius * math.cos(angle) / scale_x
         x = r_cam - zx
+        a_x = math.atan((px/scale_x)/x)
+        calc_y = r_cam * math.cos(a_x) - (r_cam - calc_x)
+        calc_x *= math.sin(angle)
+        calc_y *= math.cos(angle)
         a = math.atan(calc_z/x)
         calc_z = r_cam * math.sin(a)
         #calc_z = pz / scale_y
