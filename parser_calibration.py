@@ -19,6 +19,9 @@ c_offset_bottom = [-40, 3300]
 yf = 62.245
 yr = -57.625
 
+scale_slope_x = [[0.0, 0.0], [0.0, 0.0]]  # M(b, f) B(b, f)
+scale_slope_y = [[0.0, 0.0], [0.0, 0.0]]  # M(b, f) B(b, f)
+
 
 def get_p2p_dist(p):
     avg_r = []
@@ -254,11 +257,11 @@ class Calibration(object):
         #calc_y = radius * math.cos(angle) / scale_x
         x = r_cam - zx
         a_x = math.atan((px/scale_x)/x)
-        calc_y = r_cam * math.cos(a_x) - (r_cam - calc_x)
+        calc_y = r_cam * math.sin(a_x)
         calc_x *= math.sin(angle)
         calc_y *= math.cos(angle)
-        a = math.atan(calc_z/x)
-        calc_z = r_cam * math.sin(a)
+        a_z = math.atan(calc_z/x)
+        calc_z = r_cam * math.sin(a_z)
         #calc_z = pz / scale_y
 
         return calc_x, calc_y, calc_z
