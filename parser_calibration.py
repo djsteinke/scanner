@@ -272,7 +272,7 @@ class Calibration(object):
         zx = px / math.tan(cam_angle) / scale_x
         # radius = px / math.sin(cam_angle)
         calc_x = zx
-        calc_y = cam_x / scale_x
+        calc_y = cam_x
         """
         alpha_p = math.atan(px / (r_cam - zx))
         calc_x = r_cam * math.sin(alpha_p)
@@ -284,7 +284,8 @@ class Calibration(object):
         a_y = math.atan(calc_y/x)
         calc_y = r_cam * math.sin(a_y)
         calc_y = (calc_y*scale_x + cx - self.lc[l] - c_offset) / scale_x
-        radius = math.sqrt(math.pow(calc_y, 2) + math.pow(calc_x, 2))
+        pos = 1.0 if px >= 0 else -1.0
+        radius = math.sqrt(math.pow(calc_y, 2) + math.pow(calc_x, 2)) * pos
         calc_x = radius * math.sin(angle)
         calc_y = radius * math.cos(angle)
         a_z = math.atan(calc_z/x)
