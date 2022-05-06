@@ -19,8 +19,9 @@ c_offset_bottom = [-40, 3300]
 yf = 62.245
 yr = -57.625
 
-scale_slope_x = [[0.0, 0.0], [0.0, 0.0]]  # M(b, f) B(b, f)
-scale_slope_y = [[0.0, 0.0], [0.0, 0.0]]  # M(b, f) B(b, f)
+scale_x_slope = [[0.0, 0.0], [0.0, 0.0]]  # M(b, f) B(b, f)
+scale_y_slope = [[0.0, 0.0], [0.0, 0.0]]  # M(b, f) B(b, f)
+alpha_slope = [[0.0, 0.0], [0.0, 0.0]]  # M(b, f) B(b, f)
 
 
 def get_p2p_dist(p):
@@ -120,6 +121,7 @@ class Calibration(object):
             self.c2 = cv2.imread(f'{self.path}\\calibration_C2.jpg')
             self.get_scalar()
             self.get_c()
+        self.set_slope()
 
     def get_scalar(self):
         s, x, y = get_scalar(self.b0)
@@ -209,6 +211,22 @@ class Calibration(object):
         else:
             return (y - self.ll_c[1]) / self.ll_c[0]
 
+    def set_slope(self):
+        global scale_x_slope, scale_y_slope, alpha_slope
+        for l in range(0, 2):
+            p = [[self.lx[0][l], self.scalar_x[0]], [self.lx[1][l], self.scalar_x[1]]]
+            m, b = get_slope(p)
+            scale_x_slope[0][l] = m
+            scale_x_slope[1][l] = b
+            p = [[self.lx[0][l], self.scalar_y[0]], [self.lx[1][l], self.scalar_y[1]]]
+            m, b = get_slope(p)
+            scale_y_slope[0][l] = m
+            scale_y_slope[1][l] = b
+            p = [[self.lx[0][l], self.la[0][l]], [self.lx[1][l], self.la[1][l]]]
+            m, b = get_slope(p)
+            alpha_slope[0][l] = m
+            alpha_slope[1][l] = b
+
     def get_scaled_xyz(self, px, py, right, offset=0):
         # get scale at x
         # get alpha at x
@@ -218,19 +236,23 @@ class Calibration(object):
         py = py * 1.0
         orig_x = px
         l = 1 if right else 0
-        p = [[self.lx[0][l], self.scalar_x[0]], [self.lx[1][l], self.scalar_x[1]]]
-        m, b = get_slope(p)
-        scale_x = m*px + b
-        p = [[self.lx[0][l], self.scalar_y[0]], [self.lx[1][l], self.scalar_y[1]]]
-        m, b = get_slope(p)
-        scale_y = m*px + b
+        # p = [[self.lx[0][l], self.scalar_x[0]], [self.lx[1][l], self.scalar_x[1]]]
+        # m, b = get_slope(p)
+        # scale_x = m*px + b
+        scale_x = scale_x_slope[0][l] * px + scale_x_slope[1][l]
+        # p = [[self.lx[0][l], self.scalar_y[0]], [self.lx[1][l], self.scalar_y[1]]]
+        # m, b = get_slope(p)
+        # scale_y = m*px + b
+        scale_y = scale_y_slope[0][l] * px + scale_y_slope[1][l]
         p = [[self.lx[0][l], self.la[0][l]], [self.lx[1][l], self.la[1][l]]]
         m, b = get_slope(p)
         alpha = m*px + b
+        alpha = alpha_slope[0][l] * px + alpha_slope[1][l]
         if l == 0:
-            p = [[self.lx[0][1], self.la[0][1]], [self.lx[1][1], self.la[1][1]]]
-            m, b = get_slope(p)
-            alpha_r = m * px + b
+            # p = [[self.lx[0][1], self.la[0][1]], [self.lx[1][1], self.la[1][1]]]
+            # m, b = get_slope(p)
+            # alpha_r = m * px + b
+            alpha_r = alpha_slope[0][1] * px + alpha_slope[1][1]
             offset += (alpha_r - alpha)
         cam_angle = math.radians(alpha)
 
@@ -246,7 +268,7 @@ class Calibration(object):
         px -= c_offset
         angle = math.radians(offset)
         zx = px / math.tan(cam_angle) / scale_x
-        radius = px / math.sin(cam_angle)
+        # radius = px / math.sin(cam_angle)
         calc_x = zx
         """
         alpha_p = math.atan(px / (r_cam - zx))
@@ -258,8 +280,9 @@ class Calibration(object):
         x = r_cam - zx
         a_x = math.atan((px/scale_x)/x)
         calc_y = r_cam * math.sin(a_x)
-        calc_x *= math.sin(angle)
-        calc_y *= math.cos(angle)
+        r = math.sqrt(math.pow(calc_x, 2) + math.pow(calc_y, 2))
+        calc_x = r * math.sin(angle)
+        calc_y = r * math.cos(angle)
         a_z = math.atan(calc_z/x)
         calc_z = r_cam * math.sin(a_z)
         #calc_z = pz / scale_y
