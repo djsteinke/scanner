@@ -126,7 +126,7 @@ def points_process_images(images, color=None, right=True):
         xy = points_max_cols(img, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
         xy = remove_noise(xy, w)
 
-        offset = -pic_num * float(details['dps'])
+        offset = pic_num * float(details['dps'])
         xyz = [points_triangulate((x, y), offset, color=c, right=right) for x, y in xy]
         xyz = calc_normals(xyz, offset)
         xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]

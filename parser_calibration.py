@@ -253,10 +253,12 @@ class Calibration(object):
             # m, b = get_slope(p)
             # alpha_r = m * px + b
             alpha_r = alpha_slope[0][1] * px + alpha_slope[1][1]
-            offset += (alpha_r - alpha)
+            offset -= (alpha_r - alpha)
         cam_angle = math.radians(alpha)
 
+        cx = 3120.0/2.0
         cy = 4160.0/2.0
+        cam_x = (cx - px) / scale_y
         pz = cy - py
         calc_z = pz / scale_y
         r_cam = 463.0
@@ -270,6 +272,7 @@ class Calibration(object):
         zx = px / math.tan(cam_angle) / scale_x
         # radius = px / math.sin(cam_angle)
         calc_x = zx
+        calc_y = cam_x / scale_x
         """
         alpha_p = math.atan(px / (r_cam - zx))
         calc_x = r_cam * math.sin(alpha_p)
@@ -278,14 +281,14 @@ class Calibration(object):
         #calc_x = radius * math.sin(angle) / scale_x
         #calc_y = radius * math.cos(angle) / scale_x
         x = r_cam - zx
-        a_x = math.atan((px/scale_x)/x)
-        calc_y = r_cam * math.sin(a_x)
-        r = math.sqrt(math.pow(calc_x, 2) + math.pow(calc_y, 2))
-        calc_x = r * math.sin(angle)
-        calc_y = r * math.cos(angle)
+        a_y = math.atan(calc_y/x)
+        calc_y = r_cam * math.sin(a_y)
+        calc_y = (calc_y*scale_x + cx - self.lc[l] - c_offset) / scale_x
+        radius = math.sqrt(math.pow(calc_y, 2) + math.pow(calc_x, 2))
+        calc_x = radius * math.sin(angle)
+        calc_y = radius * math.cos(angle)
         a_z = math.atan(calc_z/x)
         calc_z = r_cam * math.sin(a_z)
-        #calc_z = pz / scale_y
 
         return calc_x, calc_y, calc_z
 
