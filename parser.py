@@ -75,7 +75,7 @@ def points_triangulate(points, offset, color=None, right=True):
     px, py = points
 
     bgr = [255, 0, 0]
-    if color is not None:
+    if color is not None and right:
         bgr = color[round(py), round(px)]
 
     if details['type'] == 'circular':
@@ -142,7 +142,7 @@ def points_process_images(images, color=None, right=True):
 def single():
     global calibration, roi_x, roi_y
     print("single()")
-    pic_num = 98
+    pic_num = 25
     right = scan_path + "\\right_%04d.jpg" % pic_num
     color = scan_path + "\\color_%04d.jpg" % pic_num
     r_pic = cv2.imread(right)
@@ -157,10 +157,18 @@ def single():
     xy = points_max_cols(d_pic, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
     a_xy = ['%d %d' % (x, y) for x, y in xy]
     str_xy = str.join('\n', a_xy)
-    print(str_xy)
+    # print(str_xy)
 
     offset = pic_num * float(details['dps'])
     xyz = [points_triangulate((x, y), offset, color=c_pic, right=True) for x, y in xy]
+    a_xyz = ['%d %d' % (x, y) for x, y, z, a, b, c, d, e, f in xyz]
+    str_xyz = str.join('\n', a_xyz)
+    print(str_xyz)
+
+    points = []
+    xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
+    points.extend(xyz)
+    visualize_point_cloud.vis_points(points)
 
     h, w, _ = r_pic.shape
     h_tmp = int(h / 6)
