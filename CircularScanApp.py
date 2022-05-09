@@ -155,13 +155,16 @@ def run_calibration():
         arduino.send_msg_new(4)
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'F2'))
         arduino.send_msg_new(3)
-        motor_steps = int(200.0 * 16.0 * 180.0 / 360.0)
-        arduino.send_msg_new(6, 1, motor_steps)         # turn platform
+        # motor_steps = int(200.0 * 16.0 * 180.0 / 360.0)
+        # arduino.send_msg_new(6, 1, motor_steps)         # turn platform
         tl = Toplevel()
-        cb = Button(tl, text="Continue", command=calibration_clicked, width=15)
         tl.geometry('200x100+100+450')
-        cb.pack(pady=(40, 0))
+        lb = Label(tl, text='Move pattern to back.')
+        lb.pack(pady=(20, 0))
+        cb = Button(tl, text="Continue", command=calibration_clicked, width=15)
+        cb.pack(pady=(10, 0))
         tl.grab_set()
+        cal_cnt += 1
     elif cal_cnt == 1:
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B0'))
         arduino.send_msg_new(2)
@@ -171,10 +174,13 @@ def run_calibration():
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'B2'))
         arduino.send_msg_new(3)
         tl = Toplevel()
-        cb = Button(tl, text="Continue", command=calibration_clicked, width=15)
         tl.geometry('200x100+100+450')
-        cb.pack(pady=(40, 0))
+        lb = Label(tl, text='Move pattern to center.')
+        lb.pack(pady=(20, 0))
+        cb = Button(tl, text="Continue", command=calibration_clicked, width=15)
+        cb.pack(pady=(10, 0))
         tl.grab_set()
+        cal_cnt += 1
     else:
         android.take_picture(f'%s\\calibration_%s.jpg' % (d, 'C0'))
         arduino.send_msg_new(2)
@@ -185,7 +191,7 @@ def run_calibration():
         arduino.send_msg_new(3)
         sleep(1)
         android.move_files()
-    cal_cnt += 1
+        cal_cnt = 0
 
 
 def step(s):

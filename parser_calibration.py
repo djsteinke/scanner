@@ -4,6 +4,7 @@ from parser_roi import get_roi_by_img
 import parser_util
 import json
 import os
+from calibrate_camera import CameraCalibration
 
 
 grid_size = 13.0    # mm of grid squares
@@ -95,6 +96,7 @@ class Calibration(object):
         self.lx = [[0, 0], [0, 0]]
         self.ll_c = []
         self.rl_c = []
+        self.camera_calibration = CameraCalibration()
         self.path = path
         self.load()
 
@@ -110,15 +112,15 @@ class Calibration(object):
             self.lc = cal['lc']
             self.lx = cal['lx']
         else:
-            self.b0 = cv2.imread(f'{self.path}\\calibration_B0.jpg')
-            self.b1 = cv2.imread(f'{self.path}\\calibration_B1.jpg')
-            self.b2 = cv2.imread(f'{self.path}\\calibration_B2.jpg')
-            self.f0 = cv2.imread(f'{self.path}\\calibration_F0.jpg')
-            self.f1 = cv2.imread(f'{self.path}\\calibration_F1.jpg')
-            self.f2 = cv2.imread(f'{self.path}\\calibration_F2.jpg')
-            self.c0 = cv2.imread(f'{self.path}\\calibration_C0.jpg')
-            self.c1 = cv2.imread(f'{self.path}\\calibration_C1.jpg')
-            self.c2 = cv2.imread(f'{self.path}\\calibration_C2.jpg')
+            self.b0 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_B0.jpg'))
+            self.b1 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_B1.jpg'))
+            self.b2 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_B2.jpg'))
+            self.f0 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_F0.jpg'))
+            self.f1 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_F1.jpg'))
+            self.f2 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_F2.jpg'))
+            self.c0 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_C0.jpg'))
+            self.c1 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_C1.jpg'))
+            self.c2 = self.camera_calibration.undistor_img(cv2.imread(f'{self.path}\\calibration_C2.jpg'))
             self.get_scalar()
             self.get_c()
         self.set_slope()
