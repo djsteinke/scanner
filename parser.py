@@ -3,8 +3,10 @@ import glob
 import model.pointset as ps
 import math
 import numpy as np
-from os import getcwd
+import shutil
+from os import getcwd, path, makedirs
 from parser_calibration import Calibration
+from parser_linear_calibration import LinearCalibration
 from json import load
 from parser_util import *
 
@@ -81,12 +83,27 @@ def points_triangulate(points, offset, color=None, right=True):
     if details['type'] == 'circular':
         calc_x, calc_y, calc_z = calibration.get_scaled_xyz(px, py, right, offset)
     else:
-        pz = roi_y[1]-py
-        cam_angle = math.radians(cam_degree)
-        calc_x = (px / math.tan(cam_angle)) / calibration.scalar
-        calc_y = (px - offset) / calibration.scalar
-        calc_z = pz / calibration.scalar
+        """
+        h, w, _ = color.shape
+        cx = int(w/2)
+        cy = int(h/2)
+        cam_angle = math.radians(26.0)
+        scalar = calibration.get_scalar_by_x(px)
+        calc_x = ((px-cx) / math.tan(cam_angle)) / scalar
+        calc_y = ((px-cx) / scalar) - offset
+        calc_z = (cy-py) / scalar
+        """
+        calc_x, calc_y, calc_z = calibration.get_scaled_xyz(px, py, offset)
+        # pz = roi_y[1]-py
+        # calc_y = (px - offset) / calibration.scalar
+        # calc_z = pz / calibration.scalar
 
+        """
+        if -150 > calc_x > 150 or -150 > calc_y > 150:
+            calc_x = 0.0
+            calc_y = 0.0
+            calc_z = 0.0
+        """
     return [
         calc_x,
         calc_y,
@@ -122,7 +139,7 @@ def points_process_images(images, color=None, right=True):
             img = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
             h, w, _ = img.shape
 
-        step = [calibration.scalar[0], float(details['dps']), ratio]
+        step = [calibration.scalar, float(details['dps']), ratio]
         xy = points_max_cols(img, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
         xy = remove_noise(xy, w)
 
@@ -142,18 +159,19 @@ def points_process_images(images, color=None, right=True):
 def single():
     global calibration, roi_x, roi_y
     print("single()")
-    pic_num = 25
-    right = scan_path + "\\right_%04d.jpg" % pic_num
-    color = scan_path + "\\color_%04d.jpg" % pic_num
+    pic_num = 102
+    right = image_path + "\\right_%04d.jpg" % pic_num
+    color = image_path + "\\color_%04d.jpg" % pic_num
     r_pic = cv2.imread(right)
     c_pic = cv2.imread(color)
     d_pic = cv2.subtract(r_pic, c_pic)
+    #d_pic = r_pic
 
     roi_x = [1134, 2460]
     roi_y = [666, 3408]
-    #roi_x, roi_y = get_roi_by_path(right, ratio)
-    tmin = 60
-    step = [calibration.scalar[0], float(details['dps']), ratio]
+    roi_x, roi_y = get_roi_by_path(right, ratio)
+    tmin = 40
+    step = [calibration.scalar, float(details['dps']), ratio]
     xy = points_max_cols(d_pic, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
     a_xy = ['%d %d' % (x, y) for x, y in xy]
     str_xy = str.join('\n', a_xy)
@@ -171,24 +189,25 @@ def single():
     visualize_point_cloud.vis_points(points)
 
     h, w, _ = r_pic.shape
-    h_tmp = int(h / 6)
-    w_tmp = int(w / 6)
+    r = h / 640.0
+    h_tmp = int(h / r)
+    w_tmp = int(w / r)
     new = np.zeros((h_tmp, w_tmp, 3), np.uint8)
     print('xy length', len(xy))
     r_pic = cv2.resize(r_pic, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
     d_pic = cv2.resize(d_pic, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
     for x, y in xy:
-        x = int(x/6)
-        y = int(y/6)
+        x = int(x/r)
+        y = int(y/r)
         new[y, x, 2] = 255
         d_pic[y, x, 0] = 255
         r_pic[y, x, 1] = 255
     #new = cv2.resize(new, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
 
-    #cv2.imshow('orig', r_pic)
-    #cv2.imshow('diff', d_pic)
-    #cv2.imshow('points', new)
-    #cv2.waitKey()
+    cv2.imshow('orig', r_pic)
+    cv2.imshow('diff', d_pic)
+    cv2.imshow('points', new)
+    cv2.waitKey()
 
 
 def main():
@@ -200,11 +219,11 @@ def main():
     points = []
 
     if details['rl']:
-        right = glob.glob("%s/right*" % scan_path.rstrip('/'))
+        right = glob.glob("%s/right*" % image_path.rstrip('/'))
         right.sort()
 
     if details['ll']:
-        left = glob.glob("%s/left*" % scan_path.rstrip('/'))
+        left = glob.glob("%s/left*" % image_path.rstrip('/'))
         left.sort()
 
     if details['rl']:
@@ -213,7 +232,7 @@ def main():
         roi_x, roi_y = get_roi_by_path(left[0], ratio)
 
     if details['color']:
-        color = glob.glob("%s/color*" % scan_path.rstrip('/'))
+        color = glob.glob("%s/color*" % image_path.rstrip('/'))
         color.sort()
 
     print(f'RIGHT[{len(right)}] LEFT[{len(left)}] COLOR[{len(color)}]')
@@ -244,16 +263,29 @@ if __name__ == "__main__":
     args, _ = parser.parse_args()
     t = args.type
 
-    scan_dir = '20220505145503'
+    scan_dir = '20220518121521'
     scan_path = getcwd() + "\\scans\\" + scan_dir
+    image_path = scan_path + "\\images"
+    if not path.isdir(image_path):
+        image_path = scan_path
 
     details_path = f'{scan_path}\\details.json'
     f = open(details_path, 'r')
     details = load(f)
     print(details)
 
-    calibration_path = getcwd() + "\\calibration"
-    calibration = Calibration(calibration_path)
+    cal_path = scan_path + "\\calibration"
+    if not path.isdir(cal_path):
+        if details['type'] == 'linear':
+            source_path = getcwd() + "\\calibration\\linear"
+        else:
+            source_path = getcwd() + "\\calibration\\circular"
+        shutil.copytree(source_path, cal_path)
+
+    if details['type'] == 'linear':
+        calibration = LinearCalibration(cal_path)
+    else:
+        calibration = Calibration(cal_path)
     ratio = 1
 
     roi_x = []

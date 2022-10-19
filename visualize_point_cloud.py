@@ -49,7 +49,7 @@ def main(p=None):
     pcd = None
     if path == "/":
         input_path = getcwd()
-        dataname = "20220505145503"
+        dataname = "20220516162353"
         xyz = open(input_path + '\\scans\\' + dataname + '\\' + dataname + ".xyz", mode="r")
         #xyz = open(input_path + '\\scans\\' + '20220429_063234' + ".xyz", mode="r")
         points = []
@@ -62,9 +62,9 @@ def main(p=None):
         """
         for line in xyz:
             x, y, z, r, g, b, nx, ny, nz = line.split()
-            #r = str(round(float(r)/255.0, 2))
-            #g = str(round(float(g)/255.0, 2))
-            #b = str(round(float(b)/255.0, 2))
+            r = str(round(float(r)/255.0, 2))
+            g = str(round(float(g)/255.0, 2))
+            b = str(round(float(b)/255.0, 2))
             #print(x, y, z, r, g, b)
             points.append([x, y, z])
             colors.append([r, g, b])

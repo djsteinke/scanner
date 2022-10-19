@@ -1,0 +1,104 @@
+import serial
+from time import sleep
+
+
+class Pico(object):
+    def __init__(self, com="COM3", speed="9600"):
+        self.serial = None
+        self._connected = False
+        self._sending = False
+        self.response = None
+        self.callback = None
+        self._msg_id = 0
+        self._com = com
+        self._speed = speed
+
+    def open(self):
+        try:
+            self.serial = serial.Serial(self._com, 9600, timeout=0.2)
+        except serial.SerialException:
+            print('PICO not found.')
+            raise Exception('Failed to connect')
+
+        self.connected = True
+
+    def close(self):
+        if self.serial is not None:
+            self.serial.close()
+        self.connected = False
+
+    def get_msg_id(self):
+        self._msg_id += 1
+        return self._msg_id
+
+    def send_msg_new(self, a, d=0, v=0):
+        if self.connected:
+            m = self.get_msg_id() + 512     # MSG ID 10 bits
+            m = m << 4                      # Action 4 bits
+            m += a                          # Action
+            m = m << 2                      # Direction 2 bits
+            m += d                          # Direction
+            m = m << 16                     # Value 16 bits
+            m += v                          # Value
+
+            self.serial.write(bytes(str(m), encoding='utf-8'))
+            print('sent', a, d, v, 'int val', m)
+
+            cnt = 0
+            while True:
+                data = self.serial.readline()
+                if data:
+                    print('rec', data)
+                    res = int(data)
+                    msg_id = res & 0x7fc0
+                    msg_id = msg_id >> 6
+                    found = msg_id == self._msg_id
+                    success = res & 0x003f == 1
+                    print(msg_id, found, success)
+                    if found or success:
+                        break
+                if cnt >= 100 and v < 15000:
+                    print('resend')
+                    #self.serial.write(bytes(str(m), encoding='utf-8'))
+                    cnt = 0
+                cnt += 1
+
+    def send_msg(self, msg_in):
+        if self.connected:
+            msg = str(self.get_msg_id()) + ":" + msg_in
+            print(f"out[{msg}]")
+            self._sending = True
+            self.serial.write(bytes(msg, encoding="utf8"))
+            while True:
+                data = self.serial.readline()
+                s_data = data.decode().rstrip()
+                if len(s_data) > 0:
+                    s_data = s_data.rstrip(':end')
+                    print(f'in[{s_data}]')
+
+                datas = s_data.split(":")
+                if len(datas) > 0 and str(self._msg_id) == datas[0]:
+                    self.response = s_data
+                    if datas[-1] == 1:
+                        if self.callback is not None:
+                            self.callback()
+                    self._sending = False
+                    break
+        else:
+            print("No pico found.  Message will not be sent.")
+
+    @property
+    def connected(self):
+        return self._connected
+
+    @connected.setter
+    def connected(self, val):
+        self._connected = val
+
+    @property
+    def com(self):
+        return self._com
+
+    @com.setter
+    def com(self, val):
+        self._com = val
