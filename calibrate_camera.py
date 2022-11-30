@@ -16,13 +16,11 @@ ny = 17              # ny: number of grids in y axis
 # 7, 9, 25
 # 11, 14, 14.5
 
-grid_size = 14.5    # mm of grid squares
-nx = 11              # nx: number of grids in x axis
-ny = 14              # ny: number of grids in y axis
+grid_size = 25    # mm of grid squares
+nx = 7              # nx: number of grids in x axis
+ny = 9              # ny: number of grids in y axis
 #nx = 11              # nx: number of grids in x axis
 #ny = 14              # ny: number of grids in y axis
-
-
 
 objp = np.zeros((nx * ny, 3), np.float32)
 objp[:, :2] = np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
@@ -97,7 +95,7 @@ class CameraCalibration(object):
                 # Draw and display the corners
                 img = cv2.drawChessboardCorners(img, (nx, ny), corners2, ret)
                 cv2.imshow('img', img)
-                cv2.waitKey(500)
+                cv2.waitKey()
 
         cv2.destroyAllWindows()
         if gray_pic is None:
@@ -105,6 +103,7 @@ class CameraCalibration(object):
             return None, None
 
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray_pic.shape[::-1], None, None)
+        print(cv2.calibrationMatrixValues(mtx, gray_pic.shape[::-1], 4.896, 3.864))
         return mtx, dist
 
     def load_calibration(self, reload):
@@ -140,3 +139,10 @@ def save_calibration(mtx, dist, wd):
         destination = wd + "\\" + pickle_file
     pickle.dump(data, open(destination, "wb"))
 
+
+p = "C:\\Users\\djste\\PyCharmProjects\\scanner\\calibration\\android"
+print(p)
+if path.isfile(p + "\\calibration_0001.jpg"):
+    print("cal exists")
+cal = CameraCalibration(wd=p, reload=True)
+print(cal.mtx)

@@ -15,7 +15,7 @@ from circular_scan import CircularScan
 from subprocess import run
 from os import getcwd, makedirs, path
 from scan_popup import ScanPopup
-from calibration import Calibration
+from calibration import Calibration, AndroidCalibration
 from hdpitkinter import HdpiTk
 from PIL import ImageTk, Image
 import cv2
@@ -143,6 +143,16 @@ def camera_calibration_clicked():
 def run_camera_calibration():
     path = getcwd() + "\\calibration\\circular"
     cal = Calibration(arduino=arduino, camera=cam, android=None, path=path)
+    cal.start()
+
+
+def android_calibration_clicked():
+    Timer(0.1, run_android_calibration).start()
+
+
+def run_android_calibration():
+    path = getcwd() + "\\calibration\\android"
+    cal = AndroidCalibration(path=path)
     cal.start()
 
 
@@ -581,7 +591,7 @@ if __name__ == '__main__':
     fr = Frame(mn)
     but_start = Button(fr, text="Cal. Scalar", command=calibration_clicked, font=font_bold, width=10)
     but_start.grid(column=0, columnspan=1, row=0, padx=(0, 10), pady=(0, 0), sticky=EW)
-    but_start = Button(fr, text="Cal. Camera", command=camera_calibration_clicked, font=font_bold, width=10)
+    but_start = Button(fr, text="Cal. Camera", command=android_calibration_clicked, font=font_bold, width=10)
     but_start.grid(column=1, columnspan=1, row=0, padx=(10, 0), pady=(0, 0), sticky=EW)
     fr.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(7, 0))
     mn_row += 1

@@ -2,6 +2,8 @@ import os
 import cv2
 import numpy as np
 import glob
+
+from AndroidSocket import AndroidSocket
 from scan_popup import ScanPopup
 
 
@@ -105,6 +107,27 @@ def det_camera_matrix():
     cv2.imshow('original', img)
     cv2.imshow('diff', diff)
     cv2.waitKey()
+
+
+class AndroidCalibration(object):
+    def __init__(self, path="/"):
+        self._path = path  # /calibration/android
+        self._popup = ScanPopup(steps=3, button="Next", callback=self.step)
+        self._curr_step = 0
+
+    def start(self):
+        self._popup.open()
+        if not os.path.isdir(self._path):
+            os.makedirs(self._path)
+        self.step()
+
+    def step(self):
+        if self._curr_step < 3:
+            android_socket = AndroidSocket(self._path)
+            name = f'calibration_%04d.jpg' % (self._curr_step+1)
+            android_socket.take_pic(name)
+            self._curr_step += 1
+        self._popup.step(self._curr_step)
 
 
 class Calibration(object):

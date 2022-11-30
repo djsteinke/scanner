@@ -8,7 +8,7 @@ import numpy as np
 
 class AndroidSocket(object):
     def __init__(self, path=None):
-        self._host = "192.168.0.8"
+        self._host = "192.168.0.12"
         self._port = 50001
         self._path = path
 

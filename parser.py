@@ -317,7 +317,7 @@ if __name__ == "__main__":
     t = args.type
     # t = "single"
 
-    scan_dir = '20221129160247'
+    scan_dir = '20220505145503'
     scan_path = getcwd() + "\\scans\\" + scan_dir
     image_path = scan_path + "\\images"
     if not path.isdir(image_path):
