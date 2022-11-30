@@ -4,9 +4,12 @@ import numpy as np
 import glob
 from scan_popup import ScanPopup
 
+
+# 7, 9
+# 11, 14
 steps = 11
-nx = 6              # nx: number of grids in x axis
-ny = 9              # ny: number of grids in y axis
+nx = 11              # nx: number of grids in x axis
+ny = 14
 
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((nx*ny, 3), np.float32)
@@ -14,6 +17,35 @@ objp[:, :2] = np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 # Arrays to store object points and image points from all the images.
 objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
+
+found = False
+p0x = 0
+corners_ret = None
+
+
+def find_checkerboard(img, webcam=False):
+    global found, p0x, corners_ret
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    r_h = 693
+    r_w = 520
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)
+    if ret:
+        objpoints.append(objp)
+
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        corners_ret = corners2
+        if not webcam:
+            p0x = corners2[0][0][0]
+        if not found:
+            # print(corners)
+            # print(corners2)
+            found = True
+        imgpoints.append(corners2)
+
+        # Draw and display the corners
+        img = cv2.drawChessboardCorners(img, (nx, ny), corners2, ret)
+    return img
 
 
 def det_camera_matrix():
@@ -76,11 +108,12 @@ def det_camera_matrix():
 
 
 class Calibration(object):
-    def __init__(self, arduino=None, android=None, path="/", callback=None):
+    def __init__(self, arduino=None, camera=None, android=None, path="/", callback=None):
         self.arduino = arduino
         self.android = android
         self.path = path
         self._callback = callback
+        self.camera = camera
         self.popup = ScanPopup()
 
     def start(self):
@@ -99,11 +132,20 @@ class Calibration(object):
         dps = 180.0 / 360.0 / (steps * 1.0 - 1.0)  # degrees / step, 180 degrees / 10 steps
         pps = round(200.0 * 16.0 * dps)  # 200 full steps per rotation (motor), 16 micro-steps
         for i in range(1, steps):
-            self.android.take_picture(f'%s/calibration_%04d.jpg' % (self.path, i))
+            if self.android is None:
+                ret, img = self.camera.read()
+                if ret:
+                    h, w, _ = img.shape
+                    if w > h:
+                        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    cv2.imwrite(f'%s/calibration_%04d.jpg' % (self.path, i), img)
+            else:
+                self.android.take_picture(f'%s/calibration_%04d.jpg' % (self.path, i))
             self.arduino.send_msg_new(6, 1, pps)  # turn platform
             if self.popup is not None:
                 self.step(i + 1)
 
-        self.android.move_files()
+        if self.arduino is None:
+            self.android.move_files()
         if self._callback is not None:
             self._callback()

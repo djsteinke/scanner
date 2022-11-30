@@ -66,7 +66,7 @@ def points_max_cols(img, threshold=(60, 255), c=False, roi=None, step=None):
     t_min, t_max = threshold
     xy = list()
 
-    y_step = 5
+    y_step = 2
     if step is not None:
         y_step = int(step[0] * float(step[1]) / (step[2]*1.0))  # scalar, dps, ratio
 

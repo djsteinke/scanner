@@ -8,7 +8,8 @@ import numpy as np
 from PIL import ImageTk, Image
 from threading import Timer
 from pico import Pico
-from cv2 import cv2
+#from cv2 import cv2
+import cv2
 from os import getcwd, makedirs, path
 from scan_popup import ScanPopup
 from hdpitkinter import HdpiTk

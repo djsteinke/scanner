@@ -69,11 +69,41 @@ def calc_normals(xyz, a):
     return xyz
 
 
+def calculate_normal_new(xyz, a):
+    length = len(xyz)
+    r = 5
+    angle = math.radians(a)
+    for i in range(0, length-r, 1):
+        p1 = xyz[i]
+        p2 = xyz[i+r]
+        r1 = math.sqrt(math.pow(p1[0], 2) + math.pow(p1[2], 2))
+        r2 = math.sqrt(math.pow(p2[0], 2) + math.pow(p2[2], 2))
+        beta = 0.0
+        if p1[1]-p2[1] > 0:
+            beta = math.pi/2.0 - math.atan((r1-r2)/(p1[1]-p2[1]))
+        r1 += math.cos(beta)
+        y1 = p1[1]-p2[1] + math.sin(beta)
+
+        x_neg = p1[0] < 0
+        z_neg = p1[2] < 0
+        calc_x = r1 * math.cos(angle)
+        if x_neg:
+            calc_x *= -1
+        calc_z = r1 * math.sin(angle)
+        if z_neg:
+            calc_z *= -1
+
+        xyz[i][6] = calc_x/100.0
+        xyz[i][7] = y1/100.0
+        xyz[i][8] = calc_z/100.0
+    return xyz
+
+
 def points_triangulate(points, offset, color=None, right=True):
     if right:
-        cam_degree = 30
+        cam_degree = 26
     else:
-        cam_degree = 15
+        cam_degree = 26
     px, py = points
 
     bgr = [255, 0, 0]
@@ -81,7 +111,24 @@ def points_triangulate(points, offset, color=None, right=True):
         bgr = color[round(py), round(px)]
 
     if details['type'] == 'circular':
-        calc_x, calc_y, calc_z = calibration.get_scaled_xyz(px, py, right, offset)
+        #calc_x, calc_y, calc_z = calibration.get_scaled_xyz(px, py, right, offset)
+        calc_x = 0.0
+        if float(px) != 632.0:
+            calc_x = 374.0/(1701.0/(float(px)-632.0) + 1.0/math.tan(math.radians(cam_degree)))
+        calc_z = -calc_x/math.tan(math.radians(cam_degree))
+        calc_y = (374.0+calc_z)*(1048.0-float(py))/1701.0
+
+        angle = math.radians(offset)
+        radius = math.sqrt(math.pow(calc_z, 2) + math.pow(calc_x, 2))
+        x_neg = calc_x < 0
+        z_neg = calc_z < 0
+        calc_x = radius * math.cos(angle)
+        if x_neg:
+            calc_x *= -1
+        calc_z = radius * math.sin(angle)
+        if z_neg:
+            calc_z *= -1
+        # print(round(calc_x, 2), round(calc_y, 2), round(calc_z, 2), px, py)
     else:
         """
         h, w, _ = color.shape
@@ -139,12 +186,15 @@ def points_process_images(images, color=None, right=True):
             img = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_AREA)
             h, w, _ = img.shape
 
-        step = [calibration.scalar, float(details['dps']), ratio]
+        step = None
+        if calibration is not None:
+            step = [calibration.scalar, float(details['dps']), ratio]
         xy = points_max_cols(img, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
         xy = remove_noise(xy, w)
 
         offset = pic_num * float(details['dps'])
         xyz = [points_triangulate((x, y), offset, color=c, right=right) for x, y in xy]
+        xyz = calculate_normal_new(xyz, offset)
         #xyz = calc_normals(xyz, offset)
         xyz = [[x, y, z, r, g, b, xn, yn, zn] for x, y, z, r, g, b, xn, yn, zn in xyz]
         points.extend(xyz)
@@ -171,8 +221,11 @@ def single():
     roi_y = [666, 3408]
     roi_x, roi_y = get_roi_by_path(right, ratio)
     tmin = 40
-    step = [calibration.scalar, float(details['dps']), ratio]
+    step = None
+    if calibration is not None:
+        step = [calibration.scalar, float(details['dps']), ratio]
     xy = points_max_cols(d_pic, threshold=(tmin, 255), c=True, roi=[roi_x, roi_y], step=step)
+    print(xy)
     a_xy = ['%d %d' % (x, y) for x, y in xy]
     str_xy = str.join('\n', a_xy)
     # print(str_xy)
@@ -262,8 +315,9 @@ if __name__ == "__main__":
                       help="")
     args, _ = parser.parse_args()
     t = args.type
+    # t = "single"
 
-    scan_dir = '20220518121521'
+    scan_dir = '20221129160247'
     scan_path = getcwd() + "\\scans\\" + scan_dir
     image_path = scan_path + "\\images"
     if not path.isdir(image_path):
@@ -285,7 +339,8 @@ if __name__ == "__main__":
     if details['type'] == 'linear':
         calibration = LinearCalibration(cal_path)
     else:
-        calibration = Calibration(cal_path)
+        # calibration = Calibration(cal_path)
+        calibration = None
     ratio = 1
 
     roi_x = []

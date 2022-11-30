@@ -1,17 +1,28 @@
+
 import logging
 from time import sleep
 from tkinter import *
+import _tkinter
 from tkinter.ttk import Progressbar
 from threading import Timer
+
+import calibration
 from android import Android
 from arduino import Arduino
+from calibrate_camera import CameraCalibration
 from collapsible_pane import CollapsiblePane
 from circular_scan import CircularScan
 from subprocess import run
-from os import getcwd, makedirs
+from os import getcwd, makedirs, path
 from scan_popup import ScanPopup
 from calibration import Calibration
 from hdpitkinter import HdpiTk
+from PIL import ImageTk, Image
+import cv2
+import socket
+import io
+
+import numpy as np
 
 cam_id = 0
 arduino = Arduino(speed=9600)
@@ -116,7 +127,8 @@ def scan_clicked():
     scan_popup = ScanPopup(root, scan_steps, pics)
     scan_popup.open()
     scan = CircularScan(arduino=arduino, android=android, d=getcwd(), s=scan_steps, c=scan_started, sc=step,
-                        degrees=degrees, rl=rl, ll=ll, color=color)
+                        degrees=degrees, rl=rl, ll=ll, color=color, cap=cam, camera_calibration=camera_calibration,
+                        brightness=bright_v, contrast=contrast_v)
     Timer(0.1, scan.start).start()
 
 
@@ -129,9 +141,9 @@ def camera_calibration_clicked():
 
 
 def run_camera_calibration():
-    path = getcwd() + "\\calibration"
-    calibration = Calibration(arduino=arduino, android=android, path=path)
-    calibration.start()
+    path = getcwd() + "\\calibration\\circular"
+    cal = Calibration(arduino=arduino, camera=cam, android=None, path=path)
+    cal.start()
 
 
 def calibration_clicked():
@@ -194,6 +206,20 @@ def run_calibration():
         cal_cnt = 0
 
 
+def take_pic_clicked():
+    ret, cv2image = cam.read()
+    if ret:
+        h, w, _ = cv2image.shape
+        if w > h:
+            cv2image = cv2.rotate(cv2image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        cv2image = camera_calibration.undistort_img(cv2image, crop=False)
+        p = getcwd() + "\\calibration\\pics\\pic_0001.jpg"
+        cv2.imwrite(p, cv2image)
+        print(cv2image.shape)
+        print(print_px())
+
+
 def step(s):
     if s == -1:
         scan_popup.error("ERROR:\nArduino not connected.\nConnect arduino and try again.")
@@ -210,10 +236,29 @@ def stop_scan():
     tmp = 1
 
 
+def move_deg(deg):
+    rot_dir = 0
+    if deg < 0:
+        rot_dir = 1
+        deg = abs(deg)
+    turns = float(deg)
+    motor_steps = int(200 * 16 * turns / 360)
+    arduino.send_msg_new(6, rot_dir, motor_steps)         # turn platform
+
+
+def move_right_click():
+    Timer(0.1, move_right).start()
+
+
+def move_left_click():
+    Timer(0.1, move_left).start()
+
+
 def move_right():
     turns = float(mv_turns.get('1.0', 'end-1c'))
     motor_steps = int(200 * 16 * turns / 360)
     arduino.send_msg_new(6, 1, motor_steps)         # turn platform
+    print_px()
     # arduino.send_msg(f"STEP:{motor_steps}:CCW")     # turn platform
 
 
@@ -221,7 +266,36 @@ def move_left():
     turns = float(mv_turns.get('1.0', 'end-1c'))
     motor_steps = int(200 * 16 * turns / 360)
     arduino.send_msg_new(6, 0, motor_steps)         # turn platform
+    print_px()
     #arduino.send_msg(f"STEP:{motor_steps}:CW")  # turn platform
+
+
+def print_px():
+    ret, cv2image = cam.read()
+    if ret:
+        h, w, _ = cv2image.shape
+        if w > h:
+            cv2image = cv2.rotate(cv2image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        cv2image = camera_calibration.undistort_img(cv2image, crop=True)
+
+        h, w, _ = cv2image.shape
+        # print(h, w)
+        calibration.find_checkerboard(cv2image)
+        pX = calibration.corners_ret[(calibration.ny-1) * calibration.nx][0][0]
+        pdx = 0
+        pdy = 0
+        pdt = 0
+        # print(calibration.corners_ret)
+        for y in range(0, calibration.ny-1):
+            for x in range(0, calibration.nx-1):
+                pdt += 1
+                i = y*calibration.nx + x
+                pdx += calibration.corners_ret[i+1][0][0] - calibration.corners_ret[i][0][0]
+                pdy += calibration.corners_ret[i+calibration.nx][0][1] - calibration.corners_ret[i][0][1]
+        pdx /= pdt
+        pdy /= pdt
+        print(pX, pdx, pdy)
 
 
 def laser_one():
@@ -250,6 +324,35 @@ def laser_two():
         laser_two_button['relief'] = 'raised'
 
 
+def flat_clicked():
+    curr_p0x = float(1080.0)
+    while True:
+        print("move")
+        move_deg(-1)
+        ret, cv2image = cam.read()
+        if ret:
+            h, w, _ = cv2image.shape
+            if w > h:
+                cv2image = cv2.rotate(cv2image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+            cv2image = camera_calibration.undistort_img(cv2image, crop=True)
+            calibration.find_checkerboard(cv2image)
+            p0x = float(calibration.p0x)
+            pX = calibration.corners_ret[(calibration.ny-1)*calibration.nx][0][0]
+            pdx = 0
+            for i in range(0, calibration.ny-1):
+                # print(calibration.corners_ret[i*calibration.nx][0][0])
+                pdx += calibration.corners_ret[(i+1)*calibration.nx][0][0] - calibration.corners_ret[i*calibration.nx][0][0]
+            pdx /= calibration.ny
+            p0x = pX
+            print(curr_p0x, p0x)
+            if p0x - curr_p0x > 0.0:
+                break
+            else:
+                curr_p0x = p0x
+        sleep(0.5)
+
+
 def arduino_connect():
     if arduino.connected:
         arduino.close()
@@ -270,11 +373,92 @@ def arduino_connect():
         arduino_con_bt['relief'] = 'raised'
 
 
+curr_img = None
+
+
+def show_webcam():
+    global curr_img
+
+    # Get the latest frame and convert into Image
+    ret, cv2image = cam.read()
+    if ret:
+        h, w, _ = cv2image.shape
+        if w > h:
+            cv2image = cv2.rotate(cv2image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            h, w, _ = cv2image.shape
+        cv2image = camera_calibration.undistort_img(cv2image, crop=True)
+
+        curr_img = cv2image
+
+        # print(cv2image.shape)
+
+        r = 1.0
+        if h > 640:
+            r = float(h)/640.0
+            w = int(float(w) / r)
+            h = int(float(h) / r)
+            cv2image = cv2.resize(cv2image, (w, h), interpolation=cv2.INTER_AREA)
+        #cv2image = cv2.line(cv2image, (0, int(h / 2)), (w, int(h / 2)), [0, 0, 255], 1)
+        hc = int(camera_calibration.mtx[1][2]/r)
+        wc = int(camera_calibration.mtx[0][2]/r)
+        cv2image = cv2.line(cv2image, (wc, 0), (wc, h), [0, 0, 255], 1)
+        cv2image = cv2.line(cv2image, (0, hc), (w, hc), [0, 0, 255], 1)
+        cv2image = calibration.find_checkerboard(cv2image, True)
+        # Convert image to PhotoImage
+        try:
+            cv2image = cv2.cvtColor(cv2image, cv2.COLOR_BGR2RGB)
+            cv2image = apply_brightness_contrast(cv2image)
+            img = Image.fromarray(cv2image)
+            imgtk = ImageTk.PhotoImage(image=img)
+            lmain.imgtk = imgtk
+            lmain.configure(image=imgtk)
+        except _tkinter.TclError or RuntimeError as e:
+            print('Error: ', str(e))
+        # Repeat after an interval to capture continiously
+    lmain.after(200, show_webcam)
+
+
+def func_bright_contrast(img):
+    global bright, contrast
+    bright = 255 - cv2.getTrackbarPos('bright', 'adjust')
+    contrast = 127 - cv2.getTrackbarPos('contrast', 'adjust')
+    #effect = apply_brightness_contrast(img, bright, contrast)
+    #cv2.imshow('Effect', effect)
+
+
+def apply_brightness_contrast(input_img):
+    #global bright, contrast
+    #brightness = map(bright, 0, 510, -255, 255)
+    #contrast = map(contrast, 0, 254, -127, 127)
+    bright = bright_v.get()
+    contrast = contrast_v.get()
+    if bright != 0:
+        if bright > 0:
+            shadow = bright
+            highlight = 255
+        else:
+            shadow = 0
+            highlight = 255 + bright
+        alpha_b = (highlight - shadow)/255
+        gamma_b = shadow
+        buf = cv2.addWeighted(input_img, alpha_b, input_img, 0, gamma_b)
+    else:
+        buf = input_img.copy()
+    if contrast != 0:
+        f = float(131 * (contrast + 127)) / (127 * (131 - contrast))
+        alpha_c = f
+        gamma_c = 127*(1-f)
+        buf = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
+    cv2.putText(buf, 'B:{},C:{}'.format(bright, contrast), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+    return buf
+
+
 if __name__ == '__main__':
     root = HdpiTk()
     #root = Tk()
     root.grid_rowconfigure(0, weight=1)  # this needed to be added
     root.grid_columnconfigure(0, weight=1)  # as did this
+    root.grid_columnconfigure(1, weight=1)  # as did this
 
     root.title("Circular Scanner")
 
@@ -328,12 +512,12 @@ if __name__ == '__main__':
     color_cb.grid(column=1, row=mn_row, padx=(5, 0), sticky=W)
     mn_row += 1
     fr = Frame(mn)
-    mv_left_button = Button(fr, text="<-", command=move_left, width=5)
+    mv_left_button = Button(fr, text="<-", command=move_left_click, width=5)
     mv_left_button.grid(column=0, row=0, pady=3)
     mv_turns = Text(fr, width=4, height=1)
     mv_turns.insert('1.0', '5')
     mv_turns.grid(column=1, row=0, padx=(10, 10))
-    mv_right_button = Button(fr, text="->", command=move_right, width=5)
+    mv_right_button = Button(fr, text="->", command=move_right_click, width=5)
     mv_right_button.grid(column=2, row=0, pady=3)
     fr.grid(column=0, columnspan=2)
 
@@ -384,6 +568,14 @@ if __name__ == '__main__':
     connect_android = Button(mn, text="Connect", command=connect_android, font=font_bold, width=10)
     connect_android.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(3, 10))
 
+    bright_v = IntVar(value=0)
+    contrast_v = IntVar(value=0)
+    mn_row += 1
+    bright_slider = Scale(mn, variable=bright_v, from_=-255, to=255, orient=HORIZONTAL)
+    contrast_slider = Scale(mn, variable=contrast_v, from_=-127, to=127, orient=HORIZONTAL)
+    bright_slider.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(3, 10))
+    mn_row += 1
+    contrast_slider.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(3, 10))
     mn_row += 1
 
     fr = Frame(mn)
@@ -394,15 +586,40 @@ if __name__ == '__main__':
     fr.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(7, 0))
     mn_row += 1
     but_start = Button(mn, text="Start Scan", command=scan_clicked, font=font_bold, width=10)
-    but_start.grid(column=0, columnspan=2, row=mn_row, padx=(0, 0), pady=(10, 0))
+    but_start.grid(column=0, columnspan=1, row=mn_row, padx=(0, 0), pady=(10, 0))
+    but_start = Button(mn, text="Find Flat", command=flat_clicked, font=font_bold, width=10)
+    but_start.grid(column=1, columnspan=1, row=mn_row, padx=(0, 0), pady=(10, 0))
 
     mn_row += 1
-    mn.pack(padx=10, pady=(0, 10))
+    but_start = Button(mn, text="Take Pic", command=take_pic_clicked, font=font_bold, width=10)
+    but_start.grid(column=0, columnspan=1, row=mn_row, padx=(0, 0), pady=(10, 0))
+
+    mn_row += 1
+    mn.grid(column=0, row=0, padx=10, pady=(0, 10))
+    #mn.pack(padx=10, pady=(0, 10))
     # Create a label in the frame
     lmain = Label(root)
-    #lmain.grid(column=1, row=0)
+    lmain.grid(column=1, row=0)
+
+    webcam = True
+    if webcam:
+        p = getcwd() + "\\calibration\\circular"
+        if path.isfile(p + "\\calibration_0001.jpg"):
+            camera_calibration = CameraCalibration(p)
+        else:
+            camera_calibration = CameraCalibration(wd=None)
+
+        cam = cv2.VideoCapture(cam_id, cv2.CAP_DSHOW)
+        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     scan_popup = ScanPopup(root, 0)
     scan = CircularScan()
+
+    #cv2.namedWindow('adjust', 1)
+    #cv2.createTrackbar('bright', 'adjust', bright, 2 * 255, func_bright_contrast)
+    #cv2.createTrackbar('contrast', 'adjust', contrast, 2 * 127, func_bright_contrast)
+
+    show_webcam()
 
     root.mainloop()

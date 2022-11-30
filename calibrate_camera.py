@@ -12,9 +12,16 @@ grid_size = 15.0    # mm of grid squares
 nx = 13              # nx: number of grids in x axis
 ny = 17              # ny: number of grids in y axis
 """
-grid_size = 13.0    # mm of grid squares
-nx = 6              # nx: number of grids in x axis
-ny = 9              # ny: number of grids in y axis
+
+# 7, 9, 25
+# 11, 14, 14.5
+
+grid_size = 14.5    # mm of grid squares
+nx = 11              # nx: number of grids in x axis
+ny = 14              # ny: number of grids in y axis
+#nx = 11              # nx: number of grids in x axis
+#ny = 14              # ny: number of grids in y axis
+
 
 
 objp = np.zeros((nx * ny, 3), np.float32)
@@ -28,11 +35,11 @@ printed = False
 
 class CameraCalibration(object):
     def __init__(self, wd=None, reload=False):
-        self.mtx = None
+        self._mtx = None
         self.dist = None
         self.wd = wd
         if wd is not None:
-            self.mtx, self.dist = self.load_calibration(reload)
+            self._mtx, self.dist = self.load_calibration(reload)
 
     def undistort_img(self, img, crop=True):
         if self.wd is not None:
@@ -40,8 +47,8 @@ class CameraCalibration(object):
             if h < w:
                 img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 h, w = img.shape[:2]
-            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w, h), 1, (w, h))
-            img_undist = cv2.undistort(img, self.mtx, self.dist, None, newcameramtx)
+            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self._mtx, self.dist, (w, h), 1, (w, h))
+            img_undist = cv2.undistort(img, self._mtx, self.dist, None, newcameramtx)
 
             if crop:
                 x, y, w, h = roi
@@ -54,7 +61,7 @@ class CameraCalibration(object):
     def undistort_file(self, imagepath):
         img = cv2.imread(imagepath)
         # undistort the image
-        img_undist = cv2.undistort(img, self.mtx, self.dist, None, self.mtx)
+        img_undist = cv2.undistort(img, self._mtx, self.dist, None, self._mtx)
         img_undistRGB = cv2.cvtColor(img_undist, cv2.COLOR_BGR2RGB)
         return img_undistRGB
 
@@ -64,7 +71,7 @@ class CameraCalibration(object):
 
         p = self.wd
 
-        images = glob.glob('%s/calibration_*[0].jpg' % p.rstrip('/'))
+        images = glob.glob('%s/calibration_*.jpg' % p.rstrip('/'))
         print(images)
 
         gray_pic = None
@@ -89,8 +96,8 @@ class CameraCalibration(object):
 
                 # Draw and display the corners
                 img = cv2.drawChessboardCorners(img, (nx, ny), corners2, ret)
-                #cv2.imshow('img', img)
-                #cv2.waitKey(500)
+                cv2.imshow('img', img)
+                cv2.waitKey(500)
 
         cv2.destroyAllWindows()
         if gray_pic is None:
@@ -109,12 +116,20 @@ class CameraCalibration(object):
                 data = pickle.load(file)
                 mtx = data['mtx']       # calibration matrix
                 dist = data['dist']     # distortion coefficients
+                print(mtx)
         else:
             mtx, dist = self.determine_calibration()
             if mtx is not None or dist is not None:
                 save_calibration(mtx, dist, self.wd)
 
         return mtx, dist
+
+    @property
+    def mtx(self):
+        if self._mtx is None:
+            return [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        else:
+            return self._mtx
 
 
 def save_calibration(mtx, dist, wd):
@@ -124,3 +139,4 @@ def save_calibration(mtx, dist, wd):
     else:
         destination = wd + "\\" + pickle_file
     pickle.dump(data, open(destination, "wb"))
+
