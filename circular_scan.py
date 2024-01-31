@@ -10,7 +10,8 @@ from AndroidSocket import AndroidSocket
 from camera_config import apply_brightness_contrast
 
 module_logger = logging.getLogger('CircularScan.scan')
-step_delay = 0.7
+step_delay = 0.1
+ms = 2.0 * 7.2
 
 
 def take_pic(path, pic, android=None, cam=None, camera_calibration=None, bright=0, contrast=0):
@@ -53,9 +54,15 @@ class CircularScan(object):
         self._bright = 0 if brightness is None else brightness.get()
         self._contrast = 0 if contrast is None else contrast.get()
         dps = float(degrees) / 360.0 / float(self.steps-1)
-        self.pps = round(200.0 * 16.0 * dps)          # 200 full steps per rotation (motor), 16 micro-steps
+        self.pps = round(200.0 * ms * dps)          # 200 full steps per rotation (motor), 16 micro-steps
+        #if self.pps > 0:
+        #    steps_tmp = round(200.0 * ms / float(degrees) / self.pps) + 1
+        #    self.steps = steps_tmp
         print(self.pps)
+        self.dps = self.pps / (200.0 * ms) * 360.0
         self.timestamp = strftime('%Y%m%d%H%M%S')
+        self.cancel = False
+        self.complete = False
 
     def start(self):
         self.path = os.path.join(self.wd, f"scans")
@@ -72,6 +79,7 @@ class CircularScan(object):
 
         self.path = os.path.join(self.wd, f"scans\\{self.timestamp}")  # create scans dir
         os.makedirs(self.path)
+        os.makedirs(self.path + "\\images")
         self.save_details()
 
         # calib_dir = self.wd + "\\scans\\calibration"
@@ -110,11 +118,14 @@ class CircularScan(object):
         self.android.take_picture(f'%s\\%s' % (self.path, pic))
         """
         # popup to setup object
+        """
         self.tl = Toplevel()
         cb = Button(self.tl, text="Scan", command=self.scan_clicked, width=15)
         self.tl.geometry('200x100+100+450')
         cb.pack(pady=(40, 0))
         self.tl.grab_set()
+        """
+        self.scan()
 
     def scan_clicked(self):
         self.tl.destroy()
@@ -122,12 +133,17 @@ class CircularScan(object):
             self._callback()
         Timer(0.1, self.scan).start()
 
+    def cancel(self):
+        self.cancel = True
+
     def scan(self):
         if not self.ll and not self.color:
             self.arduino.send_msg_new(4)
             module_logger.debug('PICO.RL ON')
             sleep(step_delay)
         for i in range(0, self.steps):
+            if self.cancel:
+                break
             if self.ll:
                 if self.rl or self.color:
                     # self.arduino.send_msg("L11")     # Turn ON left laser
@@ -135,8 +151,8 @@ class CircularScan(object):
                     module_logger.debug('PICO.LL ON')
                     sleep(step_delay)
                 pic = 'left_%04d.jpg' % i
-                take_pic(self.path, pic, self.android, self.cap, self.camera_calibration, self._bright, self._contrast)
-                print(pic)
+                take_pic(self.path + "\\images", pic, self.android, self.cap, self.camera_calibration, self._bright, self._contrast)
+                #print(pic)
                 module_logger.debug(f'Picture[{pic}] saved.')
                 if self.rl or self.color:
                     # self.arduino.send_msg("L10")     # Turn OFF left laser
@@ -149,8 +165,8 @@ class CircularScan(object):
                     module_logger.debug('PICO.RL ON')
                     sleep(step_delay)
                 pic = 'right_%04d.jpg' % i
-                take_pic(self.path, pic, self.android, self.cap, self.camera_calibration, self._bright, self._contrast)
-                print(pic)
+                take_pic(self.path + "\\images", pic, self.android, self.cap, self.camera_calibration, self._bright, self._contrast)
+                #print(pic)
                 module_logger.debug(f'Picture[{pic}] saved.')
                 if self.ll or self.color:
                     # self.arduino.send_msg("L20")     # Turn OFF right laser
@@ -159,25 +175,26 @@ class CircularScan(object):
                     sleep(step_delay)
             if self.color:
                 pic = 'color_%04d.jpg' % i
-                take_pic(self.path, pic, self.android, self.cap, self.camera_calibration, self._bright, self._contrast)
-                print(pic)
+                take_pic(self.path + "\\images", pic, self.android, self.cap, self.camera_calibration, self._bright, self._contrast)
+                #print(pic)
                 module_logger.debug(f'Picture[{pic}] saved.')
             # self.arduino.send_msg(f"STEP:{self.pps}:CW")      # turn platform
-            self.arduino.send_msg_new(6, 1, self.pps)
+            self.arduino.send_msg_new(6, 0, self.pps)
             module_logger.debug(f'PICO.STEP[{i}]')
             sleep(step_delay)
             if self._step_callback is not None:
                 self._step_callback(i+1)
-        self._step_callback(-2)
-        if self.android is not None:
-            self.android.move_files(self._step_callback)
-            print('moving files complete.')
-            self.android.sync_media_service()
+        # self._step_callback(-2)
+        # if self.android is not None:
+        #     self.android.move_files(self._step_callback)
+        #     print('moving files complete.')
+        #     self.android.sync_media_service()
+        self.complete = True
         if self._callback is not None:
             self._callback()
 
     def save_details(self):
-        dps = self.pps / (200.0 * 16.0) * 360.0
+        dps = self.pps / (200.0 * ms) * 360.0
         details = {"date": self.timestamp,
                    "steps": self.steps,
                    "ll": self.ll,

@@ -6,6 +6,7 @@ from os import getcwd, path
 
 
 pickle_file = 'calibration_pickle.p'
+pickle_calib_file = 'calib_pickle.p'
 
 """
 grid_size = 15.0    # mm of grid squares
@@ -16,11 +17,12 @@ ny = 17              # ny: number of grids in y axis
 # 7, 9, 25
 # 11, 14, 14.5
 
-grid_size = 25    # mm of grid squares
-nx = 7              # nx: number of grids in x axis
-ny = 9              # ny: number of grids in y axis
-#nx = 11              # nx: number of grids in x axis
-#ny = 14              # ny: number of grids in y axis
+#grid_size = 25    # mm of grid squares
+#nx = 7              # nx: number of grids in x axis
+#ny = 9              # ny: number of grids in y axis
+grid_size = 14.5
+nx = 11              # nx: number of grids in x axis
+ny = 14              # ny: number of grids in y axis
 
 objp = np.zeros((nx * ny, 3), np.float32)
 objp[:, :2] = np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
@@ -36,6 +38,7 @@ class CameraCalibration(object):
         self._mtx = None
         self.dist = None
         self.wd = wd
+        self.config = [0, 0, 0, 0, 0, 0]  # Rx, Ry, f, Cx, Cy, Cz
         if wd is not None:
             self._mtx, self.dist = self.load_calibration(reload)
 
@@ -95,7 +98,29 @@ class CameraCalibration(object):
                 # Draw and display the corners
                 img = cv2.drawChessboardCorners(img, (nx, ny), corners2, ret)
                 cv2.imshow('img', img)
-                cv2.waitKey()
+                cv2.waitKey(500)
+
+                pX = corners2[(ny - 1) * nx][0][0]
+                pdx = 0
+                pdy = 0
+                pdt = 0
+
+                x_a = []
+                # print(calibration.corners_ret)
+                for y in range(0, ny - 1):
+                    for x in range(0, nx - 1):
+                        pdt += 1
+                        i = y * nx + x
+                        pdx += corners2[i + 1][0][0] - corners2[i][0][0]
+                        pdy += corners2[i + nx][0][1] - corners2[i][0][1]
+                pdx /= pdt
+                pdy /= pdt
+                x_a.append(pdx)
+                i += 1
+                if self.config[1] == 0 or pdx/pdy > self.config[0]/self.config[1]:
+                    self.config[0] = round(pdx, 2)
+                    self.config[1] = round(pdy, 2)
+                print(i, pX, pdx, pdy)
 
         cv2.destroyAllWindows()
         if gray_pic is None:
@@ -103,13 +128,23 @@ class CameraCalibration(object):
             return None, None
 
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray_pic.shape[::-1], None, None)
-        print(cv2.calibrationMatrixValues(mtx, gray_pic.shape[::-1], 4.896, 3.864))
+        # print(cv2.calibrationMatrixValues(mtx, gray_pic.shape[::-1], 5.6448, 4.2336))
+        self.config[2] = round((mtx[0][0] + mtx[1][1])/2.0, 2)
+        self.config[3] = round(mtx[0][2], 2)
+        self.config[4] = round(mtx[1][2], 2)
+        self.config[5] = round(grid_size/((self.config[0]+self.config[1])/2.0)*self.config[2], 2)
+        print(self.config)
+        save_camera_calibration(self.wd, self.config)
         return mtx, dist
 
     def load_calibration(self, reload):
         source = self.wd + "\\" + pickle_file
-
-        if path.isfile(source) and not reload:
+        calib_source = self.wd + "\\" + pickle_calib_file
+        if path.isfile(calib_source) and reload:
+            with open(calib_source, 'rb') as file:
+                data = pickle.load(file)
+                self.config = [data['px'], data['py'], data['f'], data['cx'], data['cy'], data['cz'], ]
+        if path.isfile(source) and reload:
             with open(source, 'rb') as file:
                 # print('load calibration data')
                 data = pickle.load(file)
@@ -131,6 +166,22 @@ class CameraCalibration(object):
             return self._mtx
 
 
+def save_camera_calibration(wd, calib):
+    data = {
+        'px': calib[0],
+        'py': calib[1],
+        'f': calib[2],
+        'cx': calib[3],
+        'cy': calib[4],
+        'cz': calib[5],
+    }
+    if wd is None:
+        destination = getcwd() + "\\calibration\\" + pickle_calib_file
+    else:
+        destination = wd + "\\" + pickle_calib_file
+    pickle.dump(data, open(destination, "wb"))
+
+
 def save_calibration(mtx, dist, wd):
     data = {'mtx': mtx, 'dist': dist}
     if wd is None:
@@ -140,9 +191,16 @@ def save_calibration(mtx, dist, wd):
     pickle.dump(data, open(destination, "wb"))
 
 
-p = "C:\\Users\\djste\\PyCharmProjects\\scanner\\calibration\\android"
+"""
+p = getcwd() + "\\calibration\\android"
 print(p)
 if path.isfile(p + "\\calibration_0001.jpg"):
     print("cal exists")
+else:
+    print("incorrect path")
 cal = CameraCalibration(wd=p, reload=True)
 print(cal.mtx)
+print(cal.config)
+"""
+# f 1536.5 / Cx 534 / Cy 962 / f 8.02 / 73.4 / Cz 303.4
+# f 1520.7 / Cx 571.5 / Cy 945.0 / f 7.94

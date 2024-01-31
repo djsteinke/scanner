@@ -8,17 +8,22 @@ import numpy as np
 
 class AndroidSocket(object):
     def __init__(self, path=None):
-        self._host = "192.168.0.12"
+        self._host = "192.168.0.149"
         self._port = 50001
         self._path = path
 
     def take_pic(self, name):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print("socket created")
+        # print("socket created")
         s.connect((self._host, self._port))
-        s.sendall(b"take pic")
+        # print("socket connected")
+        if "color" in name:
+            s.sendall(b"take pic flash")
+        else:
+            s.sendall(b"take pic")
+        #  print("data sent")
         s.shutdown(socket.SHUT_WR)
-        sleep(0.5)
+        sleep(0.2)
         # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # s.connect(("192.168.0.8", 50001))
         data = b''
@@ -32,7 +37,7 @@ class AndroidSocket(object):
                 sleep(0.5)
             if data_found and len(new_data) == 0:
                 break
-            # print(data)
+            # print(len(data))
         # print("data: " + data.decode())
         # s.shutdown(socket.SHUT_RD)
         s.close()

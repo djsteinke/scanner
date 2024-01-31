@@ -1,3 +1,5 @@
+import threading
+
 import numpy as np
 from os import getcwd
 import open3d as o3d
@@ -22,6 +24,33 @@ def temp():
     o3d.visualization.draw_geometries([pcd], width=1280, height=720)
 
 
+vis = o3d.visualization.Visualizer()
+
+
+def your_update_function(in_points):
+    #Your update routine
+    points = []
+    normals = []
+    colors = []
+    for x, y, z, r, g, b, nx, ny, nz in in_points:
+        r = str(round(float(r) / 255.0, 2))
+        g = str(round(float(g) / 255.0, 2))
+        b = str(round(float(b) / 255.0, 2))
+        # print(x, y, z, r, g, b)
+        points.append([x, y, z])
+        normals.append([nx, ny, nz])
+        colors.append([r, g, b])
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+    pcd.normals = o3d.utility.Vector3dVector(normals)
+    pcd.colors = o3d.utility.Vector3dVector(colors)
+    vis.update_geometry(pcd)
+    vis.update_renderer()
+    vis.poll_events()
+    threading.Timer(0.1, vis.run)
+    #vis.run()
+
+
 def vis_points(in_points):
     points = []
     normals = []
@@ -40,6 +69,13 @@ def vis_points(in_points):
     pcd.colors = o3d.utility.Vector3dVector(colors)
 
     o3d.visualization.draw_geometries([pcd], width=1280, height=720)
+
+    #pcd = o3d.io.read_point_cloud(out_fn)
+    #vis.create_window()
+    #vis.register_key_callback(key, your_update_function)
+    #vis.add_geometry(pcd)
+    #threading.Timer(0.1, vis.run)
+    #vis.run()
 
 
 def main(p=None):

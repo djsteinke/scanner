@@ -25,6 +25,13 @@ p0x = 0
 corners_ret = None
 
 
+def get_corners():
+    if corners_ret is None:
+        return []
+    else:
+        return corners_ret
+
+
 def find_checkerboard(img, webcam=False):
     global found, p0x, corners_ret
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -110,10 +117,13 @@ def det_camera_matrix():
 
 
 class AndroidCalibration(object):
-    def __init__(self, path="/"):
+    def __init__(self, arduino=None, path="/"):
         self._path = path  # /calibration/android
-        self._popup = ScanPopup(steps=3, button="Next", callback=self.step)
+        self._steps = 19
+        #self._popup = ScanPopup(steps=19, button="Next", callback=self.step)
+        self._popup = ScanPopup(steps=self._steps)
         self._curr_step = 0
+        self._arduino = arduino
 
     def start(self):
         self._popup.open()
@@ -128,6 +138,30 @@ class AndroidCalibration(object):
             android_socket.take_pic(name)
             self._curr_step += 1
         self._popup.step(self._curr_step)
+
+    def step_auto(self, val):
+        self._popup.step(val)
+
+    def calibrate(self):
+        self._popup.open()
+        if not os.path.isdir(self._path):
+            os.makedirs(self._path)
+        self.start_auto()
+
+    def start_auto(self):
+        self._arduino.send_msg_new(1)
+        self._arduino.send_msg_new(3)
+        pps = int(200 * 16 * (90.0 / (self._steps - 1) / 360.0))
+        #dps = 90.0 / 360.0 / (self._steps * 1.0 - 1.0)  # degrees / step, 180 degrees / 10 steps
+        #pps = round(200.0 * 16.0 * dps)  # 200 full steps per rotation (motor), 16 micro-steps
+        for i in range(0, self._steps):
+            android_socket = AndroidSocket(self._path)
+            name = f'calibration_%04d.jpg' % (self._curr_step)
+            android_socket.take_pic(name)
+            self._arduino.send_msg_new(6, 1, pps)  # turn platform
+            if self._popup is not None:
+                self.step_auto(i + 1)
+            self._curr_step += 1
 
 
 class Calibration(object):

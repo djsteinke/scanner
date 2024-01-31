@@ -118,7 +118,7 @@ def output_asc_pointset(filename, points, type='xyz'):
         if type == 'xyzrgb' or type == 'xyzn':
             points = ["%0.2f %0.2f %0.2f %0.2f %0.2f %0.2f" % (x, y, z, r, g, b) for x, y, z, r, g, b in points]
         if type == 'xyzrgb' or type == 'xyzcn':
-            points = ["%0.1f %0.1f %0.1f %d %d %d %0.1f %0.1f %0.1f" % (x, y, z, r, g, b, xn, yn, zn) for x, y, z, r, g, b, xn, yn, zn in points]
+            points = ["%0.2f %0.2f %0.2f %d %d %d %0.2f %0.2f %0.2f" % (x, y, z, r, g, b, xn, yn, zn) for x, y, z, r, g, b, xn, yn, zn in points]
     except Exception:
         print(points)
     #points = ["%0.2f %0.2f %0.2f" % (x, y, z) for x, y, z in points]

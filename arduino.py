@@ -66,22 +66,29 @@ class Arduino(object):
             # print('sent', a, d, v, 'int val', m)
 
             cnt = 0
+            error = False
             while True:
                 data = self.serial.readline()
                 if data:
                     # print('rec', data)
-                    res = int(data)
-                    msg_id = res & 0x7fc0
-                    msg_id = msg_id >> 6
-                    found = msg_id == self._msg_id
-                    success = res & 0x003f == 1
-                    # print(msg_id, found, success)
-                    if found or success:
-                        break
+                    try:
+                        res = int(data)
+                        msg_id = res & 0x7fc0
+                        msg_id = msg_id >> 6
+                        found = msg_id == self._msg_id
+                        success = res & 0x003f == 1
+                        # print(msg_id, found, success)
+                        if found or success:
+                            break
+                    except ValueError as e:
+                        if not error:
+                            print("error", str(e))
+                        error = True
                 if cnt >= 100 and v < 15000:
                     print('resend')
-                    #self.serial.write(bytes(str(m), encoding='utf-8'))
+                    # self.serial.write(bytes(str(m), encoding='utf-8'))
                     cnt = 0
+                    error = False
                 cnt += 1
 
     def send_msg(self, msg_in):
@@ -115,3 +122,11 @@ class Arduino(object):
     @connected.setter
     def connected(self, val):
         self._connected = val
+
+    @property
+    def port(self):
+        return self._com
+
+    @port.setter
+    def port(self, val):
+        self._com = val

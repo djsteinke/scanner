@@ -19,6 +19,9 @@ def get_roi_by_path(path, ratio):
     yroi[1] = int(r[1] + r[3]) * shrink
     print('ROI')
     print(xroi, yroi)
+    if xroi == [0, 0]:
+        xroi = [0, w]
+        yroi = [0, h]
     cv2.destroyWindow("ROI")
     return [int(xroi[0] / ratio), int(xroi[1] / ratio)], [int(yroi[0] / ratio), int(yroi[1] / ratio)]
 

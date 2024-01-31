@@ -4,7 +4,7 @@ from tkinter.ttk import Progressbar
 action = 'Step'
 
 
-class ScanPopup(object):
+class ScalarPopup(object):
     def __init__(self, root=None, steps=None, pics=1, callback=None, button=None):
         self.root = root
         self.steps = steps
@@ -16,7 +16,6 @@ class ScanPopup(object):
         self.pics = pics
         self.callback = callback
         self.button = button
-        self.complete = False
 
     def open(self):
         self.tl = Toplevel(self.root)
@@ -53,7 +52,6 @@ class ScanPopup(object):
         if self.pb['value'] == 100:
             self.vl['text'] = f'Scan complete.'
             self.cb['text'] = 'Close'
-            self.complete = True
 
     def cancel(self):
         if self.cb['text'] == 'Close':
